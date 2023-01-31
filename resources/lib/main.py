@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 # xbmc imports
 from xbmcaddon import Addon
-from xbmc import executebuiltin
+from xbmc import executebuiltin,log,LOGINFO
 from xbmcgui import Dialog, DialogProgress
 
 # codequick imports
@@ -13,7 +13,7 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTP, get_local_ip
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTP, get_local_ip, getChannelHeaders
 from resources.lib.constants import GET_CHANNEL_URL, PLAY_EX_URL, EXTRA_CHANNELS, GENRE_MAP, LANG_MAP, FEATURED_SRC, CONFIG, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL
 
 # additional imports
@@ -21,10 +21,12 @@ import urlquick
 from urllib.parse import urlencode
 import inputstreamhelper
 import json
-import m3u8
 from time import time, sleep
 from datetime import datetime, timedelta, date
+import m3u8
+import os
 
+os.environ['TZ'] = 'asia/kolkata'
 
 # Root path of plugin
 @Route.register
@@ -286,28 +288,36 @@ def play(plugin, channel_id, showtime=None, srno=None):
         rjson["srno"] = srno
         rjson["stream_type"] = "Catchup"
 
-    resp = urlquick.post(GET_CHANNEL_URL, json=rjson).json()
+    headers = getHeaders()
+    headers['channelid'] = str(channel_id)
+    headers['srno'] = "2301311423014"
+    resp = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1).json()
     art = {}
+    onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
-        resp.get("result", "").split("/")[-1].replace(".m3u8", ".png")
+        onlyUrl.replace(".m3u8", ".png")
+    headers['cookie'] = resp.get("result", "").split("?")[-1]
     params = getTokenParams()
-    uriToUse = resp.get("result","") + "?" + urlencode(params)
-    variant_m3u8 = m3u8.load(resp.get("result","") + "?" + urlencode(params), headers=getHeaders())
+    uriToUse = resp.get("result","")
+    m3u8String = urlquick.get(resp.get("result",""), headers=headers, max_age=-1).text
+    variant_m3u8 = m3u8.loads(m3u8String)
     if variant_m3u8.is_variant:
-          quality = len(variant_m3u8.playlists) - 1
-          uriToUse = uriToUse.replace(resp.get("result", "").split("/")[-1], variant_m3u8.playlists[quality].uri)
-        
+        if variant_m3u8.version < 4:
+            quality = len(variant_m3u8.playlists) - 1
+        else:
+            quality = len(variant_m3u8.playlists) - 2
+        #quality = len(variant_m3u8.playlists) - 1
+        uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
     return Listitem().from_dict(**{
         "label": plugin._title,
         "art": art,
-#         "callback": resp.get("result", "") + "?" + urlencode(params),
         "callback": uriToUse,
         "properties": {
             "IsPlayable": True,
             "inputstream": "inputstream.adaptive",
-            "inputstream.adaptive.stream_headers": "User-Agent=KAIOS",
+            "inputstream.adaptive.stream_headers": "User-Agent=plaYtv/7.0.8 (Linux;Android 9) ExoPlayerLib/2.11.7",
             "inputstream.adaptive.manifest_type": "hls",
-            "inputstream.adaptive.license_key": urlencode(params) + "|" + urlencode(getHeaders()) + "|R{SSM}|",
+            "inputstream.adaptive.license_key": urlencode(params) + "|" + urlencode(headers) + "|R{SSM}|",
         }
     })
 

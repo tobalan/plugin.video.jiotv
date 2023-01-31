@@ -67,12 +67,12 @@ def login(username, password, mode="unpw"):
         "upgradeAuth": "Y",
         "returnSessionDetails": "T",
         "deviceInfo": {
-            "consumptionDeviceName": "unknown sdk_google_atv_x86",
+            "consumptionDeviceName": "ZUK Z1",
             "info": {
                 "type": "android",
                 "platform": {
-                    "name": "generic_x86",
-                    "version": "8.1.0"
+                    "name": "ham",
+                    "version": "9"
                 },
                 "androidId": ""
             }
@@ -83,21 +83,20 @@ def login(username, password, mode="unpw"):
     if resp.get("ssoToken", "") != "":
         _CREDS = {
             "ssotoken": resp.get("ssoToken"),
-            "userId": resp.get("sessionAttributes", {}).get("user", {}).get("uid"),
-            "uniqueId": resp.get("sessionAttributes", {}).get("user", {}).get("unique"),
+            "userid": resp.get("sessionAttributes", {}).get("user", {}).get("uid"),
+            "uniqueid": resp.get("sessionAttributes", {}).get("user", {}).get("unique"),
             "crmid": resp.get("sessionAttributes", {}).get("user", {}).get("subscriberId"),
+            "subscriberid": resp.get("sessionAttributes", {}).get("user", {}).get("subscriberId"),
         }
         headers = {
-            "User-Agent": "JioTV",
-            "os": "Android",
             "deviceId": str(uuid4()),
-            "versionCode": "226",
             "devicetype": "phone",
-            "srno": "200206173037",
-            "appkey": "NzNiMDhlYzQyNjJm",
-            "channelid": "100",
+            "os": "android",
+            "osversion": "9",
+            "user-agent": "plaYtv/7.0.8 (Linux;Android 9) ExoPlayerLib/2.11.7",
             "usergroup": "tvYR7NSNn7rymo3F",
-            "lbcookie": "1"
+            "versioncode": "289",
+            "dm" : "ZUK ZUK Z1"
         }
         headers.update(_CREDS)
         with PersistentDict("headers") as db:
@@ -138,6 +137,19 @@ def getHeaders():
     with PersistentDict("headers") as db:
         return db.get("headers", False)
 
+def getChannelHeaders():
+    headers = getHeaders()
+    return {
+        'ssotoken': headers['ssotoken'],
+        'userId': headers['userid'],
+        'uniqueId': headers['uniqueid'],
+        'crmid': headers['crmid'],
+        'user-agent': 'plaYtv/7.0.8 (Linux;Android 9) ExoPlayerLib/2.11.7',
+        'deviceid': headers['deviceId'],
+        'devicetype': 'phone',
+        'os': 'android',
+        'osversion': '9',
+    }
 
 def getTokenParams():
     def magic(x): return base64.b64encode(hashlib.md5(x.encode()).digest()).decode().replace(
