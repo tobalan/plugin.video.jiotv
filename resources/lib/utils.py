@@ -195,3 +195,17 @@ def _install_addon(addonid):
     except RuntimeError:
         Script.log('{addon} add-on not installed.'.format(addon=addonid))
         return False
+
+def quality_to_enum(quality_str, arr_len):
+    """Converts quality into a numeric value. Max clips to fall within valid bounds."""
+    mapping = {
+        'Best': arr_len-1,
+        'High': 4,
+        'Medium+': 3,
+        'Medium': 2,
+        'Low': 1,
+        'Lowest': 0,
+    }
+    if quality_str in mapping:
+        return min(mapping[quality_str], arr_len-1)
+    return 0

@@ -13,7 +13,7 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTP, get_local_ip, getChannelHeaders
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTP, get_local_ip, getChannelHeaders, quality_to_enum
 from resources.lib.constants import GET_CHANNEL_URL, PLAY_EX_URL, EXTRA_CHANNELS, GENRE_MAP, LANG_MAP, FEATURED_SRC, CONFIG, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL
 
 # additional imports
@@ -302,10 +302,11 @@ def play(plugin, channel_id, showtime=None, srno=None):
     m3u8String = urlquick.get(resp.get("result",""), headers=headers, max_age=-1).text
     variant_m3u8 = m3u8.loads(m3u8String)
     if variant_m3u8.is_variant:
-        if variant_m3u8.version < 4:
-            quality = len(variant_m3u8.playlists) - 1
-        else:
-            quality = len(variant_m3u8.playlists) - 2
+        quality = quality_to_enum(Settings.get_string("quality"), len(variant_m3u8.playlists))
+        # if variant_m3u8.version < 4:
+        #     quality = len(variant_m3u8.playlists) - 1
+        # else:
+        #     quality = len(variant_m3u8.playlists) - 2
         #quality = len(variant_m3u8.playlists) - 1
         uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
     return Listitem().from_dict(**{
