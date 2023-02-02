@@ -27,7 +27,7 @@ from datetime import datetime, timedelta, date
 import m3u8
 import os
 
-os.environ['TZ'] = 'Asia/Kolkata'
+# os.environ['TZ'] = 'Asia/Kolkata'
 
 # Root path of plugin
 @Route.register
@@ -292,7 +292,7 @@ def play(plugin, channel_id, showtime=None, srno=None):
     headers['channelid'] = str(channel_id)
     headers['srno'] = str(uuid4())
     resp = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1).json()
-    Script.notify("challelurl", "rcvd")
+    # Script.notify("challelurl", "rcvd")
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
@@ -301,10 +301,10 @@ def play(plugin, channel_id, showtime=None, srno=None):
     params = getTokenParams()
     uriToUse = resp.get("result","")
     m3u8String = urlquick.get(resp.get("result",""), headers=headers, max_age=-1).text
-    Script.notify("m3u8", "rcvd")
+    # Script.notify("m3u8", "rcvd")
     variant_m3u8 = m3u8.loads(m3u8String)
     qltyopt = Settings.get_string("quality")
-    if variant_m3u8.is_variant and (qltyopt != 'Auto'):
+    if variant_m3u8.is_variant and (qltyopt != 'Manual'):
         quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
         # if variant_m3u8.version < 4:
         #     quality = len(variant_m3u8.playlists) - 1
