@@ -298,13 +298,14 @@ def play(plugin, channel_id, showtime=None, srno=None):
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
         onlyUrl.replace(".m3u8", ".png")
-    headers['cookie'] = resp.get("result", "").split("?")[-1]
+    cookie = resp.get("result", "").split("?")[-1]
+    headers['cookie'] = cookie
     params = getTokenParams()
     uriToUse = resp.get("result","")
     m3u8Headers = {}
     m3u8Headers['user-agent'] = headers['user-agent']
-    m3u8Headers['cookie'] = headers['cookie']
-    m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1 , allow_redirects=True , cookies=m3u8Headers['cookie'])
+    m3u8Headers['cookie'] = cookie
+    m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1 , raise_for_status=True)
     Script.notify("m3u8url", m3u8Res.status_code)
     m3u8String = m3u8Res.text
     variant_m3u8 = m3u8.loads(m3u8String)
