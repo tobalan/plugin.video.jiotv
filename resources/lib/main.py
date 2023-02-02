@@ -304,7 +304,7 @@ def play(plugin, channel_id, showtime=None, srno=None):
     m3u8Headers = {}
     m3u8Headers['user-agent'] = headers['user-agent']
     m3u8Headers['cookie'] = headers['cookie']
-    m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1)
+    m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1 , allow_redirects=True , cookies=m3u8Headers['cookie'])
     Script.notify("m3u8url", m3u8Res.status_code)
     m3u8String = m3u8Res.text
     variant_m3u8 = m3u8.loads(m3u8String)
