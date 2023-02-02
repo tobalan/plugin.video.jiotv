@@ -27,7 +27,7 @@ from datetime import datetime, timedelta, date
 import m3u8
 import os
 
-# os.environ['TZ'] = 'Asia/Kolkata'
+os.environ['TZ'] = 'Asia/Kolkata'
 
 # Root path of plugin
 @Route.register
