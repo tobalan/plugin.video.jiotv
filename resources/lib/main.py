@@ -287,10 +287,9 @@ def play(plugin, channel_id, showtime=None, srno=None):
         rjson["showtime"] = showtime
         rjson["srno"] = srno
         rjson["stream_type"] = "Catchup"
-    Script.notify("srNO", srno)
     headers = getHeaders()
     headers['channelid'] = str(channel_id)
-    headers['srno'] = srno
+    headers['srno'] = "2301311423014"
     resp = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1).json()
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
@@ -301,8 +300,9 @@ def play(plugin, channel_id, showtime=None, srno=None):
     uriToUse = resp.get("result","")
     m3u8String = urlquick.get(resp.get("result",""), headers=headers, max_age=-1).text
     variant_m3u8 = m3u8.loads(m3u8String)
-    quality = quality_to_enum(Settings.get_string("quality"), len(variant_m3u8.playlists))
-    if variant_m3u8.is_variant and (quality != 10000):
+    qltyopt = Settings.get_string("quality")
+    if variant_m3u8.is_variant and (qltyopt != 'Auto'):
+        quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
         # if variant_m3u8.version < 4:
         #     quality = len(variant_m3u8.playlists) - 1
         # else:

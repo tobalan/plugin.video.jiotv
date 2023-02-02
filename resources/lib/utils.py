@@ -199,7 +199,6 @@ def _install_addon(addonid):
 def quality_to_enum(quality_str, arr_len):
     """Converts quality into a numeric value. Max clips to fall within valid bounds."""
     mapping = {
-        'Auto': 10000,
         'Best': arr_len-1,
         'High': 4,
         'Medium+': 3,
