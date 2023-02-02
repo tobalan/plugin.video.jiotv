@@ -291,8 +291,9 @@ def play(plugin, channel_id, showtime=None, srno=None):
     headers = getHeaders()
     headers['channelid'] = str(channel_id)
     headers['srno'] = str(uuid4())
-    resp = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1).json()
-    # Script.notify("challelurl", "rcvd")
+    res = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1)
+    Script.notify("challelurl", res.status_code)
+    resp = res.json()
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
@@ -300,8 +301,9 @@ def play(plugin, channel_id, showtime=None, srno=None):
     headers['cookie'] = resp.get("result", "").split("?")[-1]
     params = getTokenParams()
     uriToUse = resp.get("result","")
-    m3u8String = urlquick.get(resp.get("result",""), headers=headers, max_age=-1).text
-    # Script.notify("m3u8", "rcvd")
+    m3u8Res = urlquick.get(uriToUse, headers=headers, max_age=-1)
+    Script.notify("m3u8url", m3u8Res.status_code)
+    m3u8String = m3u8Res.text
     variant_m3u8 = m3u8.loads(m3u8String)
     qltyopt = Settings.get_string("quality")
     if variant_m3u8.is_variant and (qltyopt != 'Manual'):
