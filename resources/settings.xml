@@ -29,7 +29,7 @@
         <setting id="cleanup" type="action" label="Clear Cache" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/cleanup/)" option="close"/>
         <setting id="popup" type="bool" label="Disable Welcome Popup" default="true"/>
         <setting id="extra" type="bool" label="Extra HD Channels" default="false"/>
-        <setting id="quality" type="labelenum" label="Stream Quality (Restart Needed)" values="Auto|Best|High|Medium+|Medium|Low|Lowest"  default="Auto"/>
+        <setting id="quality" type="labelenum" label="Stream Quality" values="Auto|Best|High|Medium+|Medium|Low|Lowest"  default="Auto"/>
     </category>
 </settings>
 
