@@ -301,7 +301,10 @@ def play(plugin, channel_id, showtime=None, srno=None):
     headers['cookie'] = resp.get("result", "").split("?")[-1]
     params = getTokenParams()
     uriToUse = resp.get("result","")
-    m3u8Res = urlquick.get(uriToUse, headers=headers, max_age=-1)
+    m3u8Headers = {}
+    m3u8Headers['user-agent'] = headers['user-agent']
+    m3u8Headers['cookie'] = headers['cookie']
+    m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1)
     Script.notify("m3u8url", m3u8Res.status_code)
     m3u8String = m3u8Res.text
     variant_m3u8 = m3u8.loads(m3u8String)
