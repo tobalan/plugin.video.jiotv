@@ -18,6 +18,7 @@ from resources.lib.constants import GET_CHANNEL_URL, PLAY_EX_URL, EXTRA_CHANNELS
 
 # additional imports
 import urlquick
+from uuid import uuid4
 from urllib.parse import urlencode
 import inputstreamhelper
 import json
@@ -289,7 +290,7 @@ def play(plugin, channel_id, showtime=None, srno=None):
         rjson["stream_type"] = "Catchup"
     headers = getHeaders()
     headers['channelid'] = str(channel_id)
-    headers['srno'] = "2301311423014"
+    headers['srno'] = str(uuid4()) or "2301311423014"
     resp = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1).json()
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
@@ -301,7 +302,6 @@ def play(plugin, channel_id, showtime=None, srno=None):
     m3u8String = urlquick.get(resp.get("result",""), headers=headers, max_age=-1).text
     variant_m3u8 = m3u8.loads(m3u8String)
     qltyopt = Settings.get_string("quality")
-    Script.notify("quality selected", qltyopt)
     if variant_m3u8.is_variant and (qltyopt != 'Auto'):
         quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
         # if variant_m3u8.version < 4:
@@ -319,7 +319,6 @@ def play(plugin, channel_id, showtime=None, srno=None):
             "inputstream": "inputstream.adaptive",
             "inputstream.adaptive.stream_headers": "User-Agent=plaYtv/7.0.8 (Linux;Android 9) ExoPlayerLib/2.11.7",
             "inputstream.adaptive.manifest_type": "hls",
-            "inputstream.adaptive.license_type": "com.widevine.alpha",
             "inputstream.adaptive.license_key": urlencode(params) + "|" + urlencode(headers) + "|R{SSM}|",
         }
     })
