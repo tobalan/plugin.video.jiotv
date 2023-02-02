@@ -292,7 +292,7 @@ def play(plugin, channel_id, showtime=None, srno=None):
     headers['channelid'] = str(channel_id)
     headers['srno'] = str(uuid4())
     res = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1)
-    Script.notify("challelurl", res.status_code)
+    # Script.notify("challelurl", res.status_code)
     resp = res.json()
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
@@ -306,11 +306,11 @@ def play(plugin, channel_id, showtime=None, srno=None):
     m3u8Headers['user-agent'] = headers['user-agent']
     m3u8Headers['cookie'] = cookie
     m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
-    Script.notify("m3u8url", m3u8Res.status_code)
+    # Script.notify("m3u8url", m3u8Res.status_code)
     m3u8String = m3u8Res.text
     variant_m3u8 = m3u8.loads(m3u8String)
     qltyopt = Settings.get_string("quality")
-    if variant_m3u8.is_variant and (qltyopt != 'Manual'):
+    if variant_m3u8.is_variant and (qltyopt != 'Auto'):
         quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
         # if variant_m3u8.version < 4:
         #     quality = len(variant_m3u8.playlists) - 1
