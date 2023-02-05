@@ -225,7 +225,7 @@ def show_epg(plugin, day, channel_id):
                 "showtime": None if islive else each.get("showtime", "").replace(":", ""),
                 "srno": None if islive else datetime.fromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
                 "stream_type": None if islive else "Catchup",
-                "programId": None if islive else each.get("srno", "").replace(":", ""),
+                "programId": None if islive else each.get("srno", ""),
                 "begin": None if islive else datetime.utcfromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
                 "end": None if islive else datetime.utcfromtimestamp(int(each.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
             }
