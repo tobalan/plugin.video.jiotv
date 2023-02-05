@@ -113,7 +113,11 @@ def show_featured(plugin, id=None):
                         info_dict["params"] = {
                             "channel_id": child.get("channel_id"),
                             "showtime": child.get("showtime", "").replace(":", ""),
-                            "srno": datetime.fromtimestamp(int(child.get("startEpoch", 0)*.001)).strftime('%Y%m%d')
+                            "srno": datetime.fromtimestamp(int(child.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
+                            "stream_type":  "Catchup",
+                            "programId":  child.get("srno", ""),
+                            "begin":  datetime.utcfromtimestamp(int(child.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
+                            "end":  datetime.utcfromtimestamp(int(child.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
                         }
                         yield Listitem.from_dict(**info_dict)
         else:
@@ -219,7 +223,11 @@ def show_epg(plugin, day, channel_id):
             "params": {
                 "channel_id": each.get("channel_id"),
                 "showtime": None if islive else each.get("showtime", "").replace(":", ""),
-                "srno": None if islive else datetime.fromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%d')
+                "srno": None if islive else datetime.fromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
+                "stream_type": None if islive else "Catchup",
+                "programId": None if islive else each.get("srno", "").replace(":", ""),
+                "begin": None if islive else datetime.utcfromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
+                "end": None if islive else datetime.utcfromtimestamp(int(each.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
             }
         })
     if int(day) == 0:
@@ -267,7 +275,7 @@ def play_ex(plugin, dt=None):
 # Also insures that user is logged in.
 @Resolver.register
 @isLoggedIn
-def play(plugin, channel_id, showtime=None, srno=None):
+def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, programId=None, begin=None, end=None):
     is_helper = inputstreamhelper.Helper("mpd", drm="com.widevine.alpha")
     hasIs = is_helper.check_inputstream()
     if not hasIs:
@@ -279,7 +287,10 @@ def play(plugin, channel_id, showtime=None, srno=None):
             if extra.get(str(channel_id)).get("ext"):
                 return extra.get(str(channel_id)).get("ext")
             return PLAY_EX_URL + extra.get(str(channel_id)).get("data")
-
+    # Script.notify("showtime", showtime)
+    # Script.notify("begin", begin)
+    # Script.notify("programid", programId)
+    # Script.notify("stream_type", stream_type)
     rjson = {
         "channel_id": int(channel_id),
         "stream_type": "Seek"
@@ -288,24 +299,30 @@ def play(plugin, channel_id, showtime=None, srno=None):
         rjson["showtime"] = showtime
         rjson["srno"] = srno
         rjson["stream_type"] = "Catchup"
+        rjson["programId"] = programId
+        rjson["begin"] = begin
+        rjson["end"] = end
+        Script.log(str(rjson), lvl=Script.INFO)
     headers = getHeaders()
     headers['channelid'] = str(channel_id)
     headers['srno'] = str(uuid4())
     res = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1)
     # Script.notify("challelurl", res.status_code)
+    Script.log(str(getChannelHeaders()), lvl=Script.INFO)
     resp = res.json()
+    Script.log(str(res.json()), lvl=Script.INFO)
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
         onlyUrl.replace(".m3u8", ".png")
-    cookie = resp.get("result", "").split("?")[-1]
+    cookie = "__hdnea__"+resp.get("result", "").split("__hdnea__")[-1]
     headers['cookie'] = cookie
     params = getTokenParams()
     uriToUse = resp.get("result","")
     m3u8Headers = {}
     m3u8Headers['user-agent'] = headers['user-agent']
     m3u8Headers['cookie'] = cookie
-    m3u8Res = urlquick.get(resp.get("result",""), headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
+    m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
     # Script.notify("m3u8url", m3u8Res.status_code)
     m3u8String = m3u8Res.text
     variant_m3u8 = m3u8.loads(m3u8String)
@@ -317,6 +334,8 @@ def play(plugin, channel_id, showtime=None, srno=None):
         # else:
         #     quality = len(variant_m3u8.playlists) - 2
         #quality = len(variant_m3u8.playlists) - 1
+        if rjson["stream_type"] == 'Catchup'and "?" in variant_m3u8.playlists[quality].uri:
+            uriToUse=uriToUse.split("?")[0] + "&" + cookie
         uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
     return Listitem().from_dict(**{
         "label": plugin._title,
@@ -388,7 +407,9 @@ def m3ugen(plugin, notify="yes"):
             "channel_id={0}".format(channel.get("channel_id"))
         catchup = ""
         if channel.get("isCatchupAvailable"):
-            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}" catchup-days="7"'.format(
+            # get the epg for this channel
+
+            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}" catchup-days="7"'.format(
                 PLAY_URL, channel.get("channel_id"))
         m3ustr += M3U_CHANNEL.format(
             tvg_id=channel.get("channel_id"),
