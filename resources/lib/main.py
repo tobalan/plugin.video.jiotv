@@ -289,6 +289,7 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
             return PLAY_EX_URL + extra.get(str(channel_id)).get("data")
     # Script.notify("showtime", showtime)
     # Script.notify("begin", begin)
+    # Script.notify("end", end)
     # Script.notify("programid", programId)
     # Script.notify("stream_type", stream_type)
     rjson = {
@@ -308,9 +309,9 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
     headers['srno'] = str(uuid4())
     res = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1)
     # Script.notify("challelurl", res.status_code)
-    Script.log(str(getChannelHeaders()), lvl=Script.INFO)
+    # Script.log(str(getChannelHeaders()), lvl=Script.INFO)
     resp = res.json()
-    Script.log(str(res.json()), lvl=Script.INFO)
+    # Script.log(str(resp), lvl=Script.INFO)
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
@@ -322,6 +323,8 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
     m3u8Headers = {}
     m3u8Headers['user-agent'] = headers['user-agent']
     m3u8Headers['cookie'] = cookie
+    # Script.log(str(m3u8Headers), lvl=Script.INFO)
+    # Script.log(uriToUse, lvl=Script.INFO)
     m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
     # Script.notify("m3u8url", m3u8Res.status_code)
     m3u8String = m3u8Res.text
@@ -337,6 +340,7 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
         if rjson["stream_type"] == 'Catchup'and "?" in variant_m3u8.playlists[quality].uri:
             uriToUse=uriToUse.split("?")[0] + "&" + cookie
         uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
+    # Script.log(uriToUse, lvl=Script.INFO)
     return Listitem().from_dict(**{
         "label": plugin._title,
         "art": art,
@@ -408,8 +412,9 @@ def m3ugen(plugin, notify="yes"):
         catchup = ""
         if channel.get("isCatchupAvailable"):
             # get the epg for this channel
+            # }&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}
 
-            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}" catchup-days="7"'.format(
+            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}" catchup-days="7"'.format(
                 PLAY_URL, channel.get("channel_id"))
         m3ustr += M3U_CHANNEL.format(
             tvg_id=channel.get("channel_id"),
