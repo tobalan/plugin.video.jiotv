@@ -25,9 +25,6 @@ import json
 from time import time, sleep
 from datetime import datetime, timedelta, date
 import m3u8
-import os
-
-os.environ['TZ'] = 'Asia/Kolkata'
 
 # Root path of plugin
 @Route.register
@@ -276,6 +273,7 @@ def play_ex(plugin, dt=None):
 @Resolver.register
 @isLoggedIn
 def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, programId=None, begin=None, end=None):
+    # import web_pdb; web_pdb.set_trace()
     is_helper = inputstreamhelper.Helper("mpd", drm="com.widevine.alpha")
     hasIs = is_helper.check_inputstream()
     if not hasIs:
@@ -296,7 +294,9 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
         "channel_id": int(channel_id),
         "stream_type": "Seek"
     }
+    isCatchup = False      
     if showtime and srno:
+        isCatchup = True
         rjson["showtime"] = showtime
         rjson["srno"] = srno
         rjson["stream_type"] = "Catchup"
@@ -306,7 +306,7 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
         Script.log(str(rjson), lvl=Script.INFO)
     headers = getHeaders()
     headers['channelid'] = str(channel_id)
-    headers['srno'] = str(uuid4())
+    headers['srno'] = str(uuid4()) if "srno" not in rjson else rjson["srno"]
     res = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1)
     # Script.notify("challelurl", res.status_code)
     # Script.log(str(getChannelHeaders()), lvl=Script.INFO)
@@ -318,29 +318,31 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
         onlyUrl.replace(".m3u8", ".png")
     cookie = "__hdnea__"+resp.get("result", "").split("__hdnea__")[-1]
     headers['cookie'] = cookie
-    params = getTokenParams()
+    # params = getTokenParams()
     uriToUse = resp.get("result","")
-    m3u8Headers = {}
-    m3u8Headers['user-agent'] = headers['user-agent']
-    m3u8Headers['cookie'] = cookie
-    # Script.log(str(m3u8Headers), lvl=Script.INFO)
-    # Script.log(uriToUse, lvl=Script.INFO)
-    m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
-    # Script.notify("m3u8url", m3u8Res.status_code)
-    m3u8String = m3u8Res.text
-    variant_m3u8 = m3u8.loads(m3u8String)
     qltyopt = Settings.get_string("quality")
-    if variant_m3u8.is_variant and (qltyopt != 'Auto'):
-        quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
-        # if variant_m3u8.version < 4:
-        #     quality = len(variant_m3u8.playlists) - 1
-        # else:
-        #     quality = len(variant_m3u8.playlists) - 2
-        #quality = len(variant_m3u8.playlists) - 1
-        if rjson["stream_type"] == 'Catchup'and "?" in variant_m3u8.playlists[quality].uri:
-            uriToUse=uriToUse.split("?")[0] + "&" + cookie
-        uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
-    # Script.log(uriToUse, lvl=Script.INFO)
+    selectionType = "adaptive"
+    if qltyopt == 'Manual':
+        selectionType = "ask-quality"
+    else:  
+        m3u8Headers = {}
+        m3u8Headers['user-agent'] = headers['user-agent']
+        m3u8Headers['cookie'] = cookie
+        # Script.log(str(m3u8Headers), lvl=Script.INFO)
+        # Script.log(uriToUse, lvl=Script.INFO)
+        m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
+        # Script.notify("m3u8url", m3u8Res.status_code)
+        m3u8String = m3u8Res.text
+        variant_m3u8 = m3u8.loads(m3u8String)
+        if variant_m3u8.is_variant and variant_m3u8.version < 7:
+            quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
+            if isCatchup:
+                tmpurl = variant_m3u8.playlists[quality].uri
+                uriToUse = uriToUse.replace(onlyUrl, tmpurl.split("?")[0])
+                del headers['cookie']
+            else:
+                uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
+    Script.log(uriToUse, lvl=Script.INFO)
     return Listitem().from_dict(**{
         "label": plugin._title,
         "art": art,
@@ -348,9 +350,11 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
         "properties": {
             "IsPlayable": True,
             "inputstream": "inputstream.adaptive",
-            "inputstream.adaptive.stream_headers": "User-Agent=plaYtv/7.0.8 (Linux;Android 9) ExoPlayerLib/2.11.7",
+            'inputstream.adaptive.stream_selection_type': selectionType,
+            "inputstream.adaptive.chooser_resolution_secure_max": "4K",
+            "inputstream.adaptive.stream_headers": urlencode(headers),
             "inputstream.adaptive.manifest_type": "hls",
-            "inputstream.adaptive.license_key": urlencode(params) + "|" + urlencode(headers) + "|R{SSM}|",
+            "inputstream.adaptive.license_key": "|" + urlencode(headers) + "|R{SSM}|",
         }
     })
 
