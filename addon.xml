@@ -54,10 +54,10 @@
         <disclaimer>This plugin is not officially commissioned/supported by Jio. The trademark "Jio" is registered by "Reliance Corporate IT Park Limited (RCITPL)"</disclaimer>
         <assets>
             <icon>resources/icon.png</icon>
-            <fanart>resources/fanart.png</fanart>
-            <screenshot>resources/screenshots/screenshot000.png</screenshot>
-            <screenshot>resources/screenshots/screenshot001.png</screenshot>
-            <screenshot>resources/screenshots/screenshot002.png</screenshot>
+            <fanart>resources/icon.png</fanart>
+            <screenshot>resources/icon.png</screenshot>
+            <screenshot>resources/icon.png</screenshot>
+            <screenshot>resources/icon.png</screenshot>
         </assets>
         <reuselanguageinvoker>true</reuselanguageinvoker>
     </extension>
