@@ -111,7 +111,6 @@ def show_featured(plugin, id=None):
                             "channel_id": child.get("channel_id"),
                             "showtime": child.get("showtime", "").replace(":", ""),
                             "srno": datetime.fromtimestamp(int(child.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
-                            "stream_type":  "Catchup",
                             "programId":  child.get("srno", ""),
                             "begin":  datetime.utcfromtimestamp(int(child.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
                             "end":  datetime.utcfromtimestamp(int(child.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
@@ -221,7 +220,6 @@ def show_epg(plugin, day, channel_id):
                 "channel_id": each.get("channel_id"),
                 "showtime": None if islive else each.get("showtime", "").replace(":", ""),
                 "srno": None if islive else datetime.fromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
-                "stream_type": None if islive else "Catchup",
                 "programId": None if islive else each.get("srno", ""),
                 "begin": None if islive else datetime.utcfromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
                 "end": None if islive else datetime.utcfromtimestamp(int(each.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
@@ -272,7 +270,7 @@ def play_ex(plugin, dt=None):
 # Also insures that user is logged in.
 @Resolver.register
 @isLoggedIn
-def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, programId=None, begin=None, end=None):
+def play(plugin, channel_id, showtime=None, srno=None , programId=None, begin=None, end=None):
     # import web_pdb; web_pdb.set_trace()
     is_helper = inputstreamhelper.Helper("mpd", drm="com.widevine.alpha")
     hasIs = is_helper.check_inputstream()
@@ -329,16 +327,24 @@ def play(plugin, channel_id, showtime=None, srno=None , stream_type=None, progra
         m3u8Headers['user-agent'] = headers['user-agent']
         m3u8Headers['cookie'] = cookie
         # Script.log(str(m3u8Headers), lvl=Script.INFO)
+        # Script.log("m3u8url", lvl=Script.INFO)
         # Script.log(uriToUse, lvl=Script.INFO)
         m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
         # Script.notify("m3u8url", m3u8Res.status_code)
         m3u8String = m3u8Res.text
         variant_m3u8 = m3u8.loads(m3u8String)
-        if variant_m3u8.is_variant and variant_m3u8.version < 7:
+        if variant_m3u8.is_variant and (variant_m3u8.version is None or variant_m3u8.version < 7):
             quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
             if isCatchup:
                 tmpurl = variant_m3u8.playlists[quality].uri
-                uriToUse = uriToUse.replace(onlyUrl, tmpurl.split("?")[0])
+                # Script.log("tmpurl", lvl=Script.INFO)
+                # Script.log(tmpurl, lvl=Script.INFO)
+                if "?" in tmpurl:
+                    uriToUse = uriToUse.split("?")[0].replace(onlyUrl,tmpurl)
+                else:
+                    uriToUse = uriToUse.replace(onlyUrl, tmpurl.split("?")[0])
+                # Script.log("finauri", lvl=Script.INFO)
+                # Script.log(uriToUse, lvl=Script.INFO)
                 del headers['cookie']
             else:
                 uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
@@ -418,7 +424,7 @@ def m3ugen(plugin, notify="yes"):
             # get the epg for this channel
             # }&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}
 
-            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&begin={{start}}&end={{end}}&programId={{catchup-id}}" catchup-days="7"'.format(
+            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&programId={{catchup-id}}" catchup-days="7"'.format(
                 PLAY_URL, channel.get("channel_id"))
         m3ustr += M3U_CHANNEL.format(
             tvg_id=channel.get("channel_id"),
