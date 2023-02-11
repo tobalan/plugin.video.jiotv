@@ -418,7 +418,7 @@ def m3ugen(plugin, notify="yes"):
             # get the epg for this channel
             # }&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}
 
-            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}" catchup-days="7"'.format(
+            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&begin={{start}}&end={{end}}&programId={{catchup-id}}" catchup-days="7"'.format(
                 PLAY_URL, channel.get("channel_id"))
         m3ustr += M3U_CHANNEL.format(
             tvg_id=channel.get("channel_id"),
