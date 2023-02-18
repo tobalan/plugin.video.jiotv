@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 # xbmc imports
 from xbmcaddon import Addon
-from xbmc import executebuiltin,log,LOGINFO
+from xbmc import executebuiltin, log, LOGINFO
 from xbmcgui import Dialog, DialogProgress
 
 # codequick imports
@@ -14,7 +14,7 @@ from codequick.storage import PersistentDict
 
 # add-on imports
 from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTP, get_local_ip, getChannelHeaders, quality_to_enum
-from resources.lib.constants import GET_CHANNEL_URL, PLAY_EX_URL, EXTRA_CHANNELS, GENRE_MAP, LANG_MAP, FEATURED_SRC, CONFIG, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL
+from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL
 
 # additional imports
 import urlquick
@@ -27,6 +27,8 @@ from datetime import datetime, timedelta, date
 import m3u8
 
 # Root path of plugin
+
+
 @Route.register
 def root(plugin):
     yield Listitem.from_dict(**{
@@ -41,11 +43,11 @@ def root(plugin):
     for e in ["Genres", "Languages"]:
         yield Listitem.from_dict(**{
             "label": e,
-            "art": {
-                "thumb": CONFIG[e][0].get("tvImg"),
-                "icon": CONFIG[e][0].get("tvImg"),
-                "fanart": CONFIG[e][0].get("promoImg"),
-            },
+            # "art": {
+            #     "thumb": CONFIG[e][0].get("tvImg"),
+            #     "icon": CONFIG[e][0].get("tvImg"),
+            #     "fanart": CONFIG[e][0].get("promoImg"),
+            # },
             "callback": Route.ref("/resources/lib/main:show_listby"),
             "params": {"by": e}
         })
@@ -58,7 +60,7 @@ def show_featured(plugin, id=None):
         "usergroup": "tvYR7NSNn7rymo3F",
         "os": "android",
         "devicetype": "phone",
-        "versionCode": "226"
+        "versionCode": "290"
     }, max_age=-1).json()
     for each in resp.get("featuredNewData", []):
         if id:
@@ -132,33 +134,50 @@ def show_featured(plugin, id=None):
 # Shows Filter options
 @Route.register
 def show_listby(plugin, by):
+    r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
+    dictionary = json.loads(r)
+    GENRE_MAP = dictionary.get("channelCategoryMapping")
+    LANG_MAP = dictionary.get("languageIdMapping")
+    langValues = list(LANG_MAP.values())
+    langValues.append("Extra")
+    CONFIG = {
+        "Genres": GENRE_MAP.values(),
+        "Languages": langValues,
+    }
     for each in CONFIG[by]:
         yield Listitem.from_dict(**{
-            "label": each.get("name"),
-            "art": {
-                "thumb": each.get("tvImg"),
-                "icon": each.get("tvImg"),
-                "fanart": each.get("promoImg")
-            },
+            "label": each,
+            # "art": {
+            #     "thumb": each.get("tvImg"),
+            #     "icon": each.get("tvImg"),
+            #     "fanart": each.get("promoImg")
+            # },
             "callback": Route.ref("/resources/lib/main:show_category"),
-            "params": {"category_id": each.get("name").replace(" ", ""), "by": by}
+            "params": {"categoryOrLang": each.replace(" ", ""), "by": by}
         })
 
 
 # Shows channels by selected filter/category
 @Route.register
-def show_category(plugin, category_id, by):
+def show_category(plugin, categoryOrLang, by):
     resp = urlquick.get(CHANNELS_SRC).json().get("result")
+    r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
+    dictionary = json.loads(r)
+    GENRE_MAP = dictionary.get("channelCategoryMapping")
+    LANG_MAP = dictionary.get("languageIdMapping")
 
     def fltr(x):
         fby = by.lower()[:-1]
         if fby == "genre":
-            return GENRE_MAP[x.get("channelCategoryId")] == category_id and Settings.get_boolean(LANG_MAP[x.get("channelLanguageId")])
+            return GENRE_MAP[str(x.get("channelCategoryId"))] == categoryOrLang and Settings.get_boolean(LANG_MAP[str(x.get("channelLanguageId"))])
         else:
-            return LANG_MAP[x.get("channelLanguageId")] == category_id
+            if (categoryOrLang == 'Extra'):
+                return x.get("channelLanguageId") > len(LANG_MAP.values())
+            else:
+                return LANG_MAP[str(x.get("channelLanguageId"))] == categoryOrLang
 
     for each in filter(fltr, resp):
-        if each.get("channelIdForRedirect") and not Settings.get_boolean("extra"):
+        if each.get("channelIdForRedirect"):
             continue
         litm = Listitem.from_dict(**{
             "label": each.get("channel_name"),
@@ -270,29 +289,17 @@ def play_ex(plugin, dt=None):
 # Also insures that user is logged in.
 @Resolver.register
 @isLoggedIn
-def play(plugin, channel_id, showtime=None, srno=None , programId=None, begin=None, end=None):
+def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=None, end=None):
     # import web_pdb; web_pdb.set_trace()
     is_helper = inputstreamhelper.Helper("mpd", drm="com.widevine.alpha")
     hasIs = is_helper.check_inputstream()
     if not hasIs:
         return
-    if showtime is None and Settings.get_boolean("extra"):
-        with open(EXTRA_CHANNELS, "r") as f:
-            extra = json.load(f)
-        if extra.get(str(channel_id)):
-            if extra.get(str(channel_id)).get("ext"):
-                return extra.get(str(channel_id)).get("ext")
-            return PLAY_EX_URL + extra.get(str(channel_id)).get("data")
-    # Script.notify("showtime", showtime)
-    # Script.notify("begin", begin)
-    # Script.notify("end", end)
-    # Script.notify("programid", programId)
-    # Script.notify("stream_type", stream_type)
     rjson = {
         "channel_id": int(channel_id),
         "stream_type": "Seek"
     }
-    isCatchup = False      
+    isCatchup = False
     if showtime and srno:
         isCatchup = True
         rjson["showtime"] = showtime
@@ -305,31 +312,26 @@ def play(plugin, channel_id, showtime=None, srno=None , programId=None, begin=No
     headers = getHeaders()
     headers['channelid'] = str(channel_id)
     headers['srno'] = str(uuid4()) if "srno" not in rjson else rjson["srno"]
-    res = urlquick.post(GET_CHANNEL_URL, json=rjson, headers=getChannelHeaders(), max_age=-1)
-    # Script.notify("challelurl", res.status_code)
-    # Script.log(str(getChannelHeaders()), lvl=Script.INFO)
+    res = urlquick.post(GET_CHANNEL_URL, json=rjson,
+                        headers=getChannelHeaders(), max_age=-1)
     resp = res.json()
-    # Script.log(str(resp), lvl=Script.INFO)
     art = {}
     onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
     art["thumb"] = art["icon"] = IMG_CATCHUP + \
         onlyUrl.replace(".m3u8", ".png")
     cookie = "__hdnea__"+resp.get("result", "").split("__hdnea__")[-1]
     headers['cookie'] = cookie
-    # params = getTokenParams()
-    uriToUse = resp.get("result","")
+    uriToUse = resp.get("result", "")
     qltyopt = Settings.get_string("quality")
     selectionType = "adaptive"
     if qltyopt == 'Manual':
         selectionType = "ask-quality"
-    else:  
+    else:
         m3u8Headers = {}
         m3u8Headers['user-agent'] = headers['user-agent']
         m3u8Headers['cookie'] = cookie
-        # Script.log(str(m3u8Headers), lvl=Script.INFO)
-        # Script.log("m3u8url", lvl=Script.INFO)
-        # Script.log(uriToUse, lvl=Script.INFO)
-        m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, max_age=-1 , raise_for_status=True , timeout=5)
+        m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers,
+                               max_age=-1, raise_for_status=True, timeout=5)
         # Script.notify("m3u8url", m3u8Res.status_code)
         m3u8String = m3u8Res.text
         variant_m3u8 = m3u8.loads(m3u8String)
@@ -337,17 +339,14 @@ def play(plugin, channel_id, showtime=None, srno=None , programId=None, begin=No
             quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
             if isCatchup:
                 tmpurl = variant_m3u8.playlists[quality].uri
-                # Script.log("tmpurl", lvl=Script.INFO)
-                # Script.log(tmpurl, lvl=Script.INFO)
                 if "?" in tmpurl:
-                    uriToUse = uriToUse.split("?")[0].replace(onlyUrl,tmpurl)
+                    uriToUse = uriToUse.split("?")[0].replace(onlyUrl, tmpurl)
                 else:
                     uriToUse = uriToUse.replace(onlyUrl, tmpurl.split("?")[0])
-                # Script.log("finauri", lvl=Script.INFO)
-                # Script.log(uriToUse, lvl=Script.INFO)
                 del headers['cookie']
             else:
-                uriToUse = uriToUse.replace(onlyUrl, variant_m3u8.playlists[quality].uri)
+                uriToUse = uriToUse.replace(
+                    onlyUrl, variant_m3u8.playlists[quality].uri)
     Script.log(uriToUse, lvl=Script.INFO)
     return Listitem().from_dict(**{
         "label": plugin._title,
@@ -410,10 +409,18 @@ def logout(plugin):
 @isLoggedIn
 def m3ugen(plugin, notify="yes"):
     channels = urlquick.get(CHANNELS_SRC).json().get("result")
+    r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
+    dictionary = json.loads(r)
+    GENRE_MAP = dictionary.get("channelCategoryMapping")
+    LANG_MAP = dictionary.get("languageIdMapping")
+
     m3ustr = "#EXTM3U x-tvg-url=\"%s\"" % EPG_SRC
     for i, channel in enumerate(channels):
-        lang = LANG_MAP[channel.get("channelLanguageId")]
-        genre = GENRE_MAP[channel.get("channelCategoryId")]
+        if (channel.get("channelLanguageId") > len(LANG_MAP.values())):
+            lang = "Extra"
+        else:
+            lang = LANG_MAP[str(channel.get("channelLanguageId"))]
+        genre = GENRE_MAP[str(channel.get("channelCategoryId"))]
         if not Settings.get_boolean(lang):
             continue
         group = lang + ";" + genre
