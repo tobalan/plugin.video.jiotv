@@ -13,7 +13,7 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTP, get_local_ip, getChannelHeaders, quality_to_enum
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum
 from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL
 
 # additional imports
@@ -376,7 +376,7 @@ def login(plugin):
                                     yeslabel="OTP", nolabel="Password")
         if login_type == 1:
             mobile = keyboard("Enter your Jio mobile number")
-            error = sendOTP(mobile)
+            error = sendOTPV2(mobile)
             if error:
                 Script.notify("Login Error", error)
                 return
