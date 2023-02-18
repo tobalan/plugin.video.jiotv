@@ -174,6 +174,8 @@ def show_category(plugin, categoryOrLang, by):
             if (categoryOrLang == 'Extra'):
                 return x.get("channelLanguageId") > len(LANG_MAP.values())
             else:
+                if x.get("channelLanguageId") > len(LANG_MAP.values()):
+                    return False
                 return LANG_MAP[str(x.get("channelLanguageId"))] == categoryOrLang
 
     for each in filter(fltr, resp):
