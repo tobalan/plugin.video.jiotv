@@ -153,7 +153,7 @@ def show_listby(plugin, by):
             #     "fanart": each.get("promoImg")
             # },
             "callback": Route.ref("/resources/lib/main:show_category"),
-            "params": {"categoryOrLang": each.replace(" ", ""), "by": by}
+            "params": {"categoryOrLang": each, "by": by}
         })
 
 
