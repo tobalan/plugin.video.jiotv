@@ -96,7 +96,7 @@ def login(username, password, mode="unpw"):
             "user-agent": "plaYtv/7.0.8 (Linux;Android 9) ExoPlayerLib/2.11.7",
             "usergroup": "tvYR7NSNn7rymo3F",
             "versioncode": "289",
-            "dm" : "ZUK ZUK Z1"
+            "dm": "ZUK ZUK Z1"
         }
         headers.update(_CREDS)
         with PersistentDict("headers") as db:
@@ -112,6 +112,18 @@ def login(username, password, mode="unpw"):
         msg = resp.get("message", "Unknow Error")
         Script.notify("Login Failed", msg)
         return msg
+
+
+def sendOTPV2(mobile):
+    if "+91" not in mobile:
+        mobile = "+91" + mobile
+    body = {"number": base64.b64encode(mobile.encode("ascii")).decode("ascii")}
+    Script.log(body, lvl=Script.ERROR)
+    resp = urlquick.post("https://jiotvapi.media.jio.com/userservice/apis/v1/loginotp/send", json=body, headers={
+        "user-agent": "okhttp/4.2.2", "os": "android", "host": "jiotvapi.media.jio.com", "devicetype": "phone", "appname": "RJIL_JioTV"}, max_age=-1, verify=False, raise_for_status=False)
+    if resp.status_code != 204:
+        return resp.json().get("errors", [{}])[-1].get("message")
+    return None
 
 
 def sendOTP(mobile):
@@ -137,6 +149,7 @@ def getHeaders():
     with PersistentDict("headers") as db:
         return db.get("headers", False)
 
+
 def getChannelHeaders():
     headers = getHeaders()
     return {
@@ -150,6 +163,7 @@ def getChannelHeaders():
         'os': 'android',
         'osversion': '9',
     }
+
 
 def getTokenParams():
     def magic(x): return base64.b64encode(hashlib.md5(x.encode()).digest()).decode().replace(
@@ -195,6 +209,7 @@ def _install_addon(addonid):
     except RuntimeError:
         Script.log('{addon} add-on not installed.'.format(addon=addonid))
         return False
+
 
 def quality_to_enum(quality_str, arr_len):
     """Converts quality into a numeric value. Max clips to fall within valid bounds."""

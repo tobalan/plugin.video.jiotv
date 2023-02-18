@@ -7,7 +7,7 @@ import os
 from urllib.parse import parse_qs, urlparse
 from xbmcvfs import translatePath
 import xbmcaddon
-from resources.lib.utils import login, sendOTP
+from resources.lib.utils import login, sendOTPV2
 
 # codequick imports
 from codequick import Script
@@ -57,7 +57,7 @@ class JioTVProxy(SimpleHTTPRequestHandler):
                     if qs.get("otp"):
                         error = login(mobile, qs.get("otp")[0], mode="otp")
                     else:
-                        error = sendOTP(mobile)
+                        error = sendOTPV2(mobile)
                 else:
                     error = "Invalid Type"
             except Exception as e:
