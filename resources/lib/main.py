@@ -169,7 +169,7 @@ def show_category(plugin, categoryOrLang, by):
     def fltr(x):
         fby = by.lower()[:-1]
         if fby == "genre":
-            return GENRE_MAP[str(x.get("channelCategoryId"))] == categoryOrLang and Settings.get_boolean(LANG_MAP[str(x.get("channelLanguageId"))])
+            return GENRE_MAP[str(x.get("channelCategoryId"))] == categoryOrLang
         else:
             if (categoryOrLang == 'Extra'):
                 return x.get("channelLanguageId") > len(LANG_MAP.values())
