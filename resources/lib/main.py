@@ -13,7 +13,7 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup
 from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL
 
 # additional imports
@@ -172,9 +172,9 @@ def show_category(plugin, categoryOrLang, by):
             return GENRE_MAP[str(x.get("channelCategoryId"))] == categoryOrLang
         else:
             if (categoryOrLang == 'Extra'):
-                return x.get("channelLanguageId") > len(LANG_MAP.values())
+                return str(x.get("channelLanguageId")) not in LANG_MAP.keys()
             else:
-                if x.get("channelLanguageId") > len(LANG_MAP.values()):
+                if (str(x.get("channelLanguageId")) not in LANG_MAP.keys()):
                     return False
                 return LANG_MAP[str(x.get("channelLanguageId"))] == categoryOrLang
 
@@ -333,7 +333,7 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
         m3u8Headers['user-agent'] = headers['user-agent']
         m3u8Headers['cookie'] = cookie
         m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers,
-                               max_age=-1, raise_for_status=True, timeout=5)
+                               max_age=-1, raise_for_status=True)
         # Script.notify("m3u8url", m3u8Res.status_code)
         m3u8String = m3u8Res.text
         variant_m3u8 = m3u8.loads(m3u8String)
@@ -418,11 +418,14 @@ def m3ugen(plugin, notify="yes"):
 
     m3ustr = "#EXTM3U x-tvg-url=\"%s\"" % EPG_SRC
     for i, channel in enumerate(channels):
-        if (channel.get("channelLanguageId") > len(LANG_MAP.values())):
+        if (str(channel.get("channelLanguageId")) not in LANG_MAP.keys()):
             lang = "Extra"
         else:
             lang = LANG_MAP[str(channel.get("channelLanguageId"))]
-        genre = GENRE_MAP[str(channel.get("channelCategoryId"))]
+        if (str(channel.get("channelCategoryId")) not in GENRE_MAP.keys()):
+            genre = "Extragenre"
+        else:
+            genre = GENRE_MAP[str(channel.get("channelCategoryId"))]
         if not Settings.get_boolean(lang):
             continue
         group = lang + ";" + genre
@@ -448,7 +451,7 @@ def m3ugen(plugin, notify="yes"):
         f.write(m3ustr.replace(u'\xa0', ' ').encode('utf-8').decode('utf-8'))
     if notify == "yes":
         Script.notify(
-            "JioTV", "Playlist updated. Restart to apply the changes.")
+            "JioTV", "Playlist updated.")
 
 
 # PVR Setup `route` to access from Settings
@@ -469,6 +472,7 @@ def pvrsetup(plugin):
         set_setting("catchupEnabled", "true")
         set_setting("catchupWatchEpgBeginBufferMins", "0")
         set_setting("catchupWatchEpgEndBufferMins", "0")
+    _setup(M3U_SRC, EPG_SRC)
 
 
 # Cache cleanup

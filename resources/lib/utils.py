@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import os
+
 import urlquick
 from uuid import uuid4
 import base64
@@ -12,7 +14,13 @@ from codequick import Script
 from codequick.storage import PersistentDict
 from xbmc import executebuiltin
 from xbmcgui import Dialog
+from xbmcaddon import Addon
+import xbmc
+import xbmcvfs
+from contextlib import contextmanager
+from collections import defaultdict
 import socket
+import json
 
 
 def get_local_ip():
@@ -126,19 +134,6 @@ def sendOTPV2(mobile):
     return None
 
 
-def sendOTP(mobile):
-    if "+91" not in mobile:
-        mobile = "+91" + mobile
-    body = {"identifier": mobile, "otpIdentifier": mobile,
-            "action": "otpbasedauthn"}
-    Script.log(body, lvl=Script.ERROR)
-    resp = urlquick.post("https://api.jio.com/v3/dip/user/otp/send", json=body, headers={
-        "x-api-key": "l7xx75e822925f184370b2e25170c5d5820a"}, max_age=-1, verify=False, raise_for_status=False)
-    if resp.status_code != 204:
-        return resp.json().get("errors", [{}])[-1].get("message")
-    return None
-
-
 def logout():
     with PersistentDict("headers") as db:
         del db["headers"]
@@ -177,6 +172,7 @@ def check_addon(addonid, minVersion=False):
     """Checks if selected add-on is installed."""
     try:
         curVersion = Script.get_info("version", addonid)
+        # Script.notify("version" , curVersion)
         if minVersion and LooseVersion(curVersion) < LooseVersion(minVersion):
             Script.log('{addon} {curVersion} doesn\'t setisfy required version {minVersion}.'.format(
                 addon=addonid, curVersion=curVersion, minVersion=minVersion))
@@ -224,3 +220,157 @@ def quality_to_enum(quality_str, arr_len):
     if quality_str in mapping:
         return min(mapping[quality_str], arr_len-1)
     return 0
+
+
+_signals = defaultdict(list)
+_skip = defaultdict(int)
+
+
+def emit(signal, *args, **kwargs):
+    if _skip[signal] > 0:
+        _skip[signal] -= 1
+        return
+
+    for f in _signals.get(signal, []):
+        f(*args, **kwargs)
+
+
+class Monitor(xbmc.Monitor):
+    def onSettingsChanged(self):
+        emit('on_settings_changed')
+
+
+monitor = Monitor()
+
+
+def kodi_rpc(method, params=None, raise_on_error=False):
+    try:
+        payload = {'jsonrpc': '2.0', 'id': 1}
+        payload.update({'method': method})
+        if params:
+            payload['params'] = params
+
+        data = json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
+        if 'error' in data:
+            raise Exception('Kodi RPC "{} {}" returned Error: "{}"'.format(
+                method, params or '', data['error'].get('message')))
+
+        return data['result']
+    except Exception as e:
+        if raise_on_error:
+            raise
+        else:
+            return {}
+
+
+def set_kodi_setting(key, value):
+    return kodi_rpc('Settings.SetSettingValue', {'setting': key, 'value': value})
+
+
+def same_file(path_a, path_b):
+    if path_a.lower().strip() == path_b.lower().strip():
+        return True
+
+    stat_a = os.stat(path_a) if os.path.isfile(path_a) else None
+    if not stat_a:
+        return False
+
+    stat_b = os.stat(path_b) if os.path.isfile(path_b) else None
+    if not stat_b:
+        return False
+
+    return (stat_a.st_dev == stat_b.st_dev) and (stat_a.st_ino == stat_b.st_ino) and (stat_a.st_mtime == stat_b.st_mtime)
+
+
+def safe_copy(src, dst, del_src=False):
+    src = xbmcvfs.translatePath(src)
+    dst = xbmcvfs.translatePath(dst)
+
+    if not xbmcvfs.exists(src) or same_file(src, dst):
+        return
+
+    if xbmcvfs.exists(dst):
+        if xbmcvfs.delete(dst):
+            Script.log('Deleted: {}'.format(dst))
+        else:
+            Script.log('Failed to delete: {}'.format(dst))
+
+    if xbmcvfs.copy(src, dst):
+        Script.log('Copied: {} > {}'.format(src, dst))
+    else:
+        Script.log('Failed to copy: {} > {}'.format(src, dst))
+
+    if del_src:
+        xbmcvfs.delete(src)
+
+
+@contextmanager
+def busy():
+    xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
+    try:
+        yield
+    finally:
+        xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
+
+
+def _setup(m3uPath, epgUrl):
+    ADDON_ID = 'pvr.iptvsimple'
+    addon = Addon(ADDON_ID)
+    ADDON_NAME = addon.getAddonInfo('name')
+    addon_path = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+    instance_filepath = os.path.join(addon_path, 'instance-settings-90.xml')
+
+    with busy():
+        kodi_rpc('Addons.SetAddonEnabled', {
+                 'addonid': ADDON_ID, 'enabled': False})
+
+        # newer PVR Simple uses instance settings that can't yet be set via python api
+        # so do a workaround where we leverage the migration when no instance settings found
+        if LooseVersion(addon.getAddonInfo('version')) >= LooseVersion('20.8.0'):
+            xbmcvfs.delete(instance_filepath)
+
+            for file in os.listdir(addon_path):
+                if file.startswith('instance-settings-') and file.endswith('.xml'):
+                    file_path = os.path.join(addon_path, file)
+                    with open(file_path) as f:
+                        data = f.read()
+                    # ensure no duplication in other instances
+                    if 'id="m3uPath">{}</setting>'.format(m3uPath) in data or 'id="epgUrl">{}</setting>'.format(epgUrl) in data:
+                        xbmcvfs.delete(os.path.join(addon_path, file_path))
+                    else:
+                        safe_copy(file_path, file_path+'.bu', del_src=True)
+
+            kodi_rpc('Addons.SetAddonEnabled', {
+                     'addonid': ADDON_ID, 'enabled': True})
+            # wait for migration to occur
+            while not os.path.exists(os.path.join(addon_path, 'instance-settings-1.xml')):
+                monitor.waitForAbort(1)
+            kodi_rpc('Addons.SetAddonEnabled', {
+                     'addonid': ADDON_ID, 'enabled': False})
+            monitor.waitForAbort(1)
+
+            safe_copy(os.path.join(addon_path, 'instance-settings-1.xml'),
+                      instance_filepath, del_src=True)
+            with open(instance_filepath, 'r') as f:
+                data = f.read()
+            with open(instance_filepath, 'w') as f:
+                f.write(data.replace('Migrated Add-on Config', ADDON_NAME))
+
+            for file in os.listdir(addon_path):
+                if file.endswith('.bu'):
+                    safe_copy(os.path.join(addon_path, file), os.path.join(
+                        addon_path, file[:-3]), del_src=True)
+            kodi_rpc('Addons.SetAddonEnabled', {
+                     'addonid': ADDON_ID, 'enabled': True})
+        else:
+            kodi_rpc('Addons.SetAddonEnabled', {
+                     'addonid': ADDON_ID, 'enabled': True})
+
+        set_kodi_setting('epg.futuredaystodisplay', 7)
+        #  set_kodi_setting('epg.ignoredbforclient', True)
+        set_kodi_setting('pvrmanager.syncchannelgroups', True)
+        set_kodi_setting('pvrmanager.preselectplayingchannel', True)
+        set_kodi_setting('pvrmanager.backendchannelorder', True)
+        set_kodi_setting('pvrmanager.usebackendchannelnumbers', True)
+
+    return True
