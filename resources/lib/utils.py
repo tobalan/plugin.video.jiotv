@@ -68,26 +68,46 @@ def isLoggedIn(func):
 
 
 def login(username, password, mode="unpw"):
-    body = {
-        "identifier": username if '@' in username else "+91" + username,
-        "password" if mode == "unpw" else "otp": password,
-        "rememberUser": "T",
-        "upgradeAuth": "Y",
-        "returnSessionDetails": "T",
-        "deviceInfo": {
-            "consumptionDeviceName": "ZUK Z1",
-            "info": {
-                "type": "android",
-                "platform": {
-                    "name": "ham",
-                    "version": "9"
-                },
-                "androidId": ""
+    resp = None
+    if (mode == 'otp'):
+        mobile = "+91" + username
+        otpbody = {
+            "number": base64.b64encode(mobile.encode("ascii")).decode("ascii"),
+            "otp": password,
+            "deviceInfo": {
+                "consumptionDeviceName": "unknown sdk_google_atv_x86",
+                "info": {
+                    "type": "android",
+                    "platform": {
+                        "name": "generic_x86"
+                    },
+                    "androidId": str(uuid4())
+                }
             }
         }
-    }
-    resp = urlquick.post("https://api.jio.com/v3/dip/user/{0}/verify".format(mode), json=body, headers={
-                         "User-Agent": "JioTV", "x-api-key": "l7xx75e822925f184370b2e25170c5d5820a"}, max_age=-1, verify=False, raise_for_status=False).json()
+        resp = urlquick.post("https://jiotvapi.media.jio.com/userservice/apis/v1/loginotp/verify", json=otpbody, headers={
+            "User-Agent": "okhttp/4.2.2", "devicetype": "phone", "os": "android", "appname": "RJIL_JioTV"}, max_age=-1, verify=False, raise_for_status=False).json()
+    else:
+        body = {
+            "identifier": username if '@' in username else "+91" + username,
+            "password" if mode == "unpw" else "otp": password,
+            "rememberUser": "T",
+            "upgradeAuth": "Y",
+            "returnSessionDetails": "T",
+            "deviceInfo": {
+                "consumptionDeviceName": "ZUK Z1",
+                "info": {
+                    "type": "android",
+                    "platform": {
+                        "name": "ham",
+                        "version": "9"
+                    },
+                    "androidId": ""
+                }
+            }
+        }
+        resp = urlquick.post("https://api.jio.com/v3/dip/user/{0}/verify".format(mode), json=body, headers={
+            "User-Agent": "JioTV", "x-api-key": "l7xx75e822925f184370b2e25170c5d5820a"}, max_age=-1, verify=False, raise_for_status=False).json()
     if resp.get("ssoToken", "") != "":
         _CREDS = {
             "ssotoken": resp.get("ssoToken"),
@@ -318,7 +338,7 @@ def _setup(m3uPath, epgUrl):
     addon = Addon(ADDON_ID)
     ADDON_NAME = addon.getAddonInfo('name')
     addon_path = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
-    instance_filepath = os.path.join(addon_path, 'instance-settings-90.xml')
+    instance_filepath = os.path.join(addon_path, 'instance-settings-91.xml')
 
     with busy():
         kodi_rpc('Addons.SetAddonEnabled', {
