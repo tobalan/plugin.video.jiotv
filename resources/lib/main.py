@@ -13,7 +13,7 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup, kodi_rpc, Monitor
 from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL
 
 # additional imports
@@ -27,6 +27,8 @@ from datetime import datetime, timedelta, date
 import m3u8
 
 # Root path of plugin
+
+monitor = Monitor()
 
 
 @Route.register
@@ -375,12 +377,14 @@ def login(plugin):
         login_type = Dialog().yesno("Login", "Select Login Type",
                                     yeslabel="OTP", nolabel="Password")
         if login_type == 1:
-            mobile = keyboard("Enter your Jio mobile number")
+            mobile = Settings.get_string("mobile")
+            if not mobile or (len(mobile) != 10):
+                mobile = Dialog().numeric(0, "Enter your Jio mobile number")
             error = sendOTPV2(mobile)
             if error:
                 Script.notify("Login Error", error)
                 return
-            otp = keyboard("Enter OTP", hidden=True)
+            otp = Dialog().numeric(0, "Enter OTP")
             ULogin(mobile, otp, mode="otp")
         elif login_type == 0:
             username = keyboard("Enter your Jio mobile number or email")
@@ -400,7 +404,34 @@ def login(plugin):
         pDialog.close()
 
 
+@Script.register
+def setmobile(plugin):
+    ADDON_ID = 'plugin.video.jiotv'
+    addon = Addon(ADDON_ID)
+    prevMobile = Settings.get_string("mobile")
+    mobile = Dialog().numeric(0, "Update Jio mobile number", prevMobile)
+    kodi_rpc('Addons.SetAddonEnabled', {
+        'addonid': ADDON_ID, 'enabled': False})
+    addon.setSetting('mobile', mobile)
+    kodi_rpc('Addons.SetAddonEnabled', {
+        'addonid': ADDON_ID, 'enabled': True})
+    monitor.waitForAbort(1)
+    Script.notify("Jio number set", "")
+
+@Script.register
+def applyall(plugin):
+    ADDON_ID = 'plugin.video.jiotv'
+    kodi_rpc('Addons.SetAddonEnabled', {
+        'addonid': ADDON_ID, 'enabled': False})
+    monitor.waitForAbort(1)
+    kodi_rpc('Addons.SetAddonEnabled', {
+        'addonid': ADDON_ID, 'enabled': True})
+    monitor.waitForAbort(1)
+    Script.notify("All settings applied", "")
+
 # Logout `route` to access from Settings
+
+
 @Script.register
 def logout(plugin):
     ULogout()
