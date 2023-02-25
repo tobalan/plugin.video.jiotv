@@ -3,10 +3,15 @@
     <category label="Account">
         <setting id="login" type="action" label="Login" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/login/)" option="close"/>
         <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/logout/)" option="close"/>
+        <setting id="setMobile" type="action" label="Update jio number" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/setmobile/)" option="close"/>
+        <setting id="mobile" type="text" label="Jio number"/>
+        <setting id="applyAllSettings0" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
     <category label="Setup">
         <setting label="Setup Simple IPTV PVR" type="action" id="pvrsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/pvrsetup/)" option="close"/>
         <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="true"/>
+        <!-- <setting id="extraPl" type="text" label="Extra Playlist"/> -->
+        <setting id="applyAllSettings1" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
     <category label="Languages">
         <setting id="Hindi" type="bool" label="Hindi" default="true"/>
@@ -24,11 +29,13 @@
         <setting id="Assamese" type="bool" label="Assamese" default="true"/>
         <setting id="Urdu" type="bool" label="Urdu" default="true"/>
         <setting id="Nepali" type="bool" label="Nepali" default="true"/>
+        <setting id="applyAllSettings2" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
     <category label="More">
         <setting id="cleanup" type="action" label="Clear Cache" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/cleanup/)" option="close"/>
         <setting id="popup" type="bool" label="Disable Welcome Popup" default="true"/>
-        <setting id="quality" type="labelenum" label="Stream Quality(restart required)" values="Manual|Best|High|Medium+|Medium|Low|Lowest"  default="Best"/>
+        <setting id="quality" type="labelenum" label="Stream Quality" values="Manual|Best|High|Medium+|Medium|Low|Lowest"  default="Best"/>
+        <setting id="applyAllSettings3" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
 </settings>
 
