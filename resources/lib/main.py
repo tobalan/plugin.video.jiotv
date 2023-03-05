@@ -13,8 +13,8 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup, kodi_rpc, Monitor
-from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup, kodi_rpc, Monitor, busy
+from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL, IMG_CONFIG, EPG_PATH
 
 # additional imports
 import urlquick
@@ -25,6 +25,10 @@ import json
 from time import time, sleep
 from datetime import datetime, timedelta, date
 import m3u8
+import requests
+import gzip
+import xml.etree.ElementTree as ET
+import os
 
 # Root path of plugin
 
@@ -147,13 +151,17 @@ def show_listby(plugin, by):
         "Languages": langValues,
     }
     for each in CONFIG[by]:
+        tvImg = IMG_CONFIG[by].get(each, {}).get("tvImg", ""),
+        promoImg = IMG_CONFIG[by].get(each, {}).get("promoImg", "")
+        image = IMG_CONFIG[by].get(each, {}).get("image", tvImg),
         yield Listitem.from_dict(**{
             "label": each,
-            # "art": {
-            #     "thumb": each.get("tvImg"),
-            #     "icon": each.get("tvImg"),
-            #     "fanart": each.get("promoImg")
-            # },
+            "art": {
+                "thumb": tvImg,
+                "icon": tvImg,
+                "fanart": promoImg,
+                "banner": image
+            },
             "callback": Route.ref("/resources/lib/main:show_category"),
             "params": {"categoryOrLang": each, "by": by}
         })
@@ -418,6 +426,7 @@ def setmobile(plugin):
     monitor.waitForAbort(1)
     Script.notify("Jio number set", "")
 
+
 @Script.register
 def applyall(plugin):
     ADDON_ID = 'plugin.video.jiotv'
@@ -439,7 +448,6 @@ def logout(plugin):
 
 # M3u Generate `route`
 @Script.register
-@isLoggedIn
 def m3ugen(plugin, notify="yes"):
     channels = urlquick.get(CHANNELS_SRC).json().get("result")
     r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
@@ -485,6 +493,56 @@ def m3ugen(plugin, notify="yes"):
             "JioTV", "Playlist updated.")
 
 
+# EPG Generate `route`
+@Script.register
+def epg_setup(plugin):
+    Script.notify("Please wait", "Epg setup in progress")
+    with busy():
+        # Download EPG XML file
+        url = 'https://raw.githubusercontent.com/mitthu786/tvepg/main/epg.xml.gz'
+        payload = {}
+        headers = {}
+        proxies = {
+            "http": "http://103.216.160.163:80",
+            "https": "http://104.223.135.178:10000",
+        }
+
+        response = requests.request(
+            "GET", url, headers=headers, data=payload, proxies=proxies)
+        with open(EPG_PATH,  'wb') as f:
+            f.write(response.content)
+            # for chunk in response.iter_content(chunk_size=1024):
+            #     if chunk:
+            #         f.write(chunk)
+        # Extract and parse the XML file
+        with gzip.open(EPG_PATH, 'rb') as f:
+            data = f.read()
+            xml_content = data.decode('utf-8')
+            root = ET.fromstring(xml_content)
+        # Modify all the programs in the EPG
+        # programs = root.findall('./programme')
+        for program in root.iterfind(".//programme"):
+            # Example: Modify the program and add catchupid
+            icon = program.find('icon')
+            icon_src = icon.get('src')
+            jpg_name = icon_src.rsplit('/', 1)[-1]
+            catchup_id = os.path.splitext(jpg_name)[0]
+            program.set('catchup-id', catchup_id)
+            title = program.find('title')
+            title.text = title.text.strip()
+
+        # create the XML declaration and add it to the top of the file
+        xml_declaration = '<?xml version="1.0" encoding="UTF-8"?>\n'
+
+        # create the doctype declaration
+        doctype_declaration = '<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
+        new_xml_content = xml_declaration + doctype_declaration + ET.tostring(root, encoding='unicode')
+        # create the root element and set its attributes
+        with gzip.open(EPG_PATH, 'wt') as f:
+            f.write(new_xml_content)
+    Script.notify("JioTV", "Epg generated,Now setup iptv pvr")
+
+
 # PVR Setup `route` to access from Settings
 @Script.register
 def pvrsetup(plugin):
@@ -498,12 +556,12 @@ def pvrsetup(plugin):
     if check_addon(IDdoADDON):
         set_setting("m3uPathType", "0")
         set_setting("m3uPath", M3U_SRC)
-        set_setting("epgPathType", "1")
-        set_setting("epgUrl", EPG_SRC)
+        set_setting("epgPathType", "0")
+        set_setting("epgPath", EPG_PATH)
         set_setting("catchupEnabled", "true")
         set_setting("catchupWatchEpgBeginBufferMins", "0")
         set_setting("catchupWatchEpgEndBufferMins", "0")
-    _setup(M3U_SRC, EPG_SRC)
+    _setup(M3U_SRC, EPG_PATH)
 
 
 # Cache cleanup

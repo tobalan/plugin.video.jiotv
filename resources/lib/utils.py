@@ -129,7 +129,8 @@ def login(username, password, mode="unpw"):
         headers.update(_CREDS)
         with PersistentDict("headers") as db:
             db["headers"] = headers
-            db["exp"] = time.time() + 432000
+            # db["exp"] = time.time() + 432000
+            db["exp"] = time.time() + 31536000
             if mode == "unpw":
                 db["username"] = username
                 db["password"] = password
@@ -392,5 +393,6 @@ def _setup(m3uPath, epgUrl):
         set_kodi_setting('pvrmanager.preselectplayingchannel', True)
         set_kodi_setting('pvrmanager.backendchannelorder', True)
         set_kodi_setting('pvrmanager.usebackendchannelnumbers', True)
+    Script.notify("IPTV setup", "epg and playlist updated")
 
     return True
