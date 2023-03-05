@@ -506,9 +506,12 @@ def epg_setup(plugin):
             "http": "http://103.216.160.163:80",
             "https": "http://104.223.135.178:10000",
         }
-
-        response = requests.request(
-            "GET", url, headers=headers, data=payload, proxies=proxies)
+        if not Settings.get_boolean("useproxy"):
+            response = requests.request(
+                "GET", url, headers=headers, data=payload)
+        else:
+            response = requests.request(
+                "GET", url, headers=headers, data=payload, proxies=proxies)
         with open(EPG_PATH,  'wb') as f:
             f.write(response.content)
             # for chunk in response.iter_content(chunk_size=1024):
@@ -536,7 +539,8 @@ def epg_setup(plugin):
 
         # create the doctype declaration
         doctype_declaration = '<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
-        new_xml_content = xml_declaration + doctype_declaration + ET.tostring(root, encoding='unicode')
+        new_xml_content = xml_declaration + doctype_declaration + \
+            ET.tostring(root, encoding='unicode')
         # create the root element and set its attributes
         with gzip.open(EPG_PATH, 'wt') as f:
             f.write(new_xml_content)
