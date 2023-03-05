@@ -9,6 +9,7 @@
     </category>
     <category label="Setup">
         <setting label="Setup Simple IPTV PVR" type="action" id="pvrsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/pvrsetup/)" option="close"/>
+        <setting label="Setup EPG" type="action" id="epgsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/epg_setup/)"/>
         <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="true"/>
         <!-- <setting id="extraPl" type="text" label="Extra Playlist"/> -->
         <setting id="applyAllSettings1" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
