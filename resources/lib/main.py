@@ -499,7 +499,7 @@ def epg_setup(plugin):
     Script.notify("Please wait", "Epg setup in progress")
     with busy():
         # Download EPG XML file
-        url = "https://cdn.jsdelivr.net/gh/mitthu786/tvepg/jiotv/epg.xml.gz"
+        url = "https://cdn.jsdelivr.net/gh/mitthu786/tvepg/epg.xml.gz"
         payload = {}
         headers = {}
         response = requests.request("GET", url, headers=headers, data=payload)
