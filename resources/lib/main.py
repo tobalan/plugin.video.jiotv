@@ -153,14 +153,12 @@ def show_listby(plugin, by):
     for each in CONFIG[by]:
         tvImg = IMG_CONFIG[by].get(each, {}).get("tvImg", ""),
         promoImg = IMG_CONFIG[by].get(each, {}).get("promoImg", "")
-        image = IMG_CONFIG[by].get(each, {}).get("image", tvImg),
         yield Listitem.from_dict(**{
             "label": each,
             "art": {
                 "thumb": tvImg,
                 "icon": tvImg,
-                "fanart": promoImg,
-                "banner": image
+                "fanart": promoImg
             },
             "callback": Route.ref("/resources/lib/main:show_category"),
             "params": {"categoryOrLang": each, "by": by}
@@ -475,7 +473,7 @@ def m3ugen(plugin, notify="yes"):
             # get the epg for this channel
             # }&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}
 
-            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&programId={{catchup-id}}" catchup-days="7"'.format(
+            catchup = ' catchup="vod" catchup-source="{0}channel_id={1}&showtime={{H}}{{M}}{{S}}&srno={{Y}}{{m}}{{d}}&programId={{catchup-id}}&begin={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}&end={{Y}}{{m}}{{d}}T{{H}}{{M}}{{S}}" catchup-days="7"'.format(
                 PLAY_URL, channel.get("channel_id"))
         m3ustr += M3U_CHANNEL.format(
             tvg_id=channel.get("channel_id"),
@@ -499,7 +497,9 @@ def epg_setup(plugin):
     Script.notify("Please wait", "Epg setup in progress")
     with busy():
         # Download EPG XML file
-        url = "https://cdn.jsdelivr.net/gh/mitthu786/tvepg/epg.xml.gz"
+        url = Settings.get_string("epgurl")
+        if not url:
+            url = "https://bit.ly/3kWSsl3"
         payload = {}
         headers = {}
         response = requests.request("GET", url, headers=headers, data=payload)
