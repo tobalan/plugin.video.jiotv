@@ -499,19 +499,10 @@ def epg_setup(plugin):
     Script.notify("Please wait", "Epg setup in progress")
     with busy():
         # Download EPG XML file
-        url = 'https://raw.githubusercontent.com/mitthu786/tvepg/main/epg.xml.gz'
+        url = "https://cdn.jsdelivr.net/gh/mitthu786/tvepg/jiotv/epg.xml.gz"
         payload = {}
         headers = {}
-        proxies = {
-            "http": "http://103.216.160.163:80",
-            "https": "http://104.223.135.178:10000",
-        }
-        if not Settings.get_boolean("useproxy"):
-            response = requests.request(
-                "GET", url, headers=headers, data=payload)
-        else:
-            response = requests.request(
-                "GET", url, headers=headers, data=payload, proxies=proxies)
+        response = requests.request("GET", url, headers=headers, data=payload)
         with open(EPG_PATH,  'wb') as f:
             f.write(response.content)
             # for chunk in response.iter_content(chunk_size=1024):
@@ -539,11 +530,11 @@ def epg_setup(plugin):
 
         # create the doctype declaration
         doctype_declaration = '<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
-        new_xml_content = xml_declaration + doctype_declaration + \
-            ET.tostring(root, encoding='unicode')
-        # create the root element and set its attributes
-        with gzip.open(EPG_PATH, 'wt') as f:
-            f.write(new_xml_content)
+        full_xml_bytes = xml_declaration.encode('UTF-8') + doctype_declaration.encode('UTF-8') + \
+            ET.tostring(root, encoding='UTF-8')
+        gzip_bytes = gzip.compress(full_xml_bytes)
+        with open(EPG_PATH, 'wb') as f:
+            f.write(gzip_bytes)
     Script.notify("JioTV", "Epg generated,Now setup iptv pvr")
 
 
