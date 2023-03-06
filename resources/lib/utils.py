@@ -393,6 +393,6 @@ def _setup(m3uPath, epgUrl):
         set_kodi_setting('pvrmanager.preselectplayingchannel', True)
         set_kodi_setting('pvrmanager.backendchannelorder', True)
         set_kodi_setting('pvrmanager.usebackendchannelnumbers', True)
-    Script.notify("IPTV setup", "epg and playlist updated")
+    Script.notify("IPTV setup", "Epg and playlist updated")
 
     return True
