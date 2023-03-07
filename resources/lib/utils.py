@@ -13,7 +13,7 @@ from distutils.version import LooseVersion
 from codequick import Script
 from codequick.storage import PersistentDict
 from xbmc import executebuiltin
-from xbmcgui import Dialog
+from xbmcgui import Dialog, DialogProgress
 from xbmcaddon import Addon
 import xbmc
 import xbmcvfs
@@ -90,7 +90,7 @@ def login(username, password, mode="unpw"):
     else:
         body = {
             "identifier": username if '@' in username else "+91" + username,
-            "password" if mode == "unpw" else "otp": password,
+            "password": password,
             "rememberUser": "T",
             "upgradeAuth": "Y",
             "returnSessionDetails": "T",
@@ -100,14 +100,14 @@ def login(username, password, mode="unpw"):
                     "type": "android",
                     "platform": {
                         "name": "ham",
-                        "version": "9"
+                        "version": "8.0.0"
                     },
-                    "androidId": ""
+                    "androidId": str(uuid4())
                 }
             }
         }
         resp = urlquick.post("https://api.jio.com/v3/dip/user/{0}/verify".format(mode), json=body, headers={
-            "User-Agent": "JioTV", "x-api-key": "l7xx75e822925f184370b2e25170c5d5820a"}, max_age=-1, verify=False, raise_for_status=False).json()
+            "User-Agent": "JioTV", "x-api-key": "l7xx75e822925f184370b2e25170c5d5820a", "Content-Type": "application/json"}, max_age=-1, verify=False, raise_for_status=False).json()
     if resp.get("ssoToken", "") != "":
         _CREDS = {
             "ssotoken": resp.get("ssoToken"),
@@ -335,64 +335,71 @@ def busy():
 
 
 def _setup(m3uPath, epgUrl):
+    pDialog = DialogProgress()
+    pDialog.create('PVR Setup in progress')
     ADDON_ID = 'pvr.iptvsimple'
     addon = Addon(ADDON_ID)
     ADDON_NAME = addon.getAddonInfo('name')
     addon_path = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     instance_filepath = os.path.join(addon_path, 'instance-settings-91.xml')
 
-    with busy():
+    kodi_rpc('Addons.SetAddonEnabled', {
+                'addonid': ADDON_ID, 'enabled': False})
+    pDialog.update(10)
+
+    # newer PVR Simple uses instance settings that can't yet be set via python api
+    # so do a workaround where we leverage the migration when no instance settings found
+    if LooseVersion(addon.getAddonInfo('version')) >= LooseVersion('20.8.0'):
+        xbmcvfs.delete(instance_filepath)
+
+        for file in os.listdir(addon_path):
+            if file.startswith('instance-settings-') and file.endswith('.xml'):
+                file_path = os.path.join(addon_path, file)
+                with open(file_path) as f:
+                    data = f.read()
+                # ensure no duplication in other instances
+                if 'id="m3uPath">{}</setting>'.format(m3uPath) in data or 'id="epgUrl">{}</setting>'.format(epgUrl) in data:
+                    xbmcvfs.delete(os.path.join(addon_path, file_path))
+                else:
+                    safe_copy(file_path, file_path+'.bu', del_src=True)
+        pDialog.update(25)
         kodi_rpc('Addons.SetAddonEnabled', {
-                 'addonid': ADDON_ID, 'enabled': False})
-
-        # newer PVR Simple uses instance settings that can't yet be set via python api
-        # so do a workaround where we leverage the migration when no instance settings found
-        if LooseVersion(addon.getAddonInfo('version')) >= LooseVersion('20.8.0'):
-            xbmcvfs.delete(instance_filepath)
-
-            for file in os.listdir(addon_path):
-                if file.startswith('instance-settings-') and file.endswith('.xml'):
-                    file_path = os.path.join(addon_path, file)
-                    with open(file_path) as f:
-                        data = f.read()
-                    # ensure no duplication in other instances
-                    if 'id="m3uPath">{}</setting>'.format(m3uPath) in data or 'id="epgUrl">{}</setting>'.format(epgUrl) in data:
-                        xbmcvfs.delete(os.path.join(addon_path, file_path))
-                    else:
-                        safe_copy(file_path, file_path+'.bu', del_src=True)
-
-            kodi_rpc('Addons.SetAddonEnabled', {
-                     'addonid': ADDON_ID, 'enabled': True})
-            # wait for migration to occur
-            while not os.path.exists(os.path.join(addon_path, 'instance-settings-1.xml')):
-                monitor.waitForAbort(1)
-            kodi_rpc('Addons.SetAddonEnabled', {
-                     'addonid': ADDON_ID, 'enabled': False})
+                    'addonid': ADDON_ID, 'enabled': True})
+        # wait for migration to occur
+        while not os.path.exists(os.path.join(addon_path, 'instance-settings-1.xml')):
             monitor.waitForAbort(1)
+        kodi_rpc('Addons.SetAddonEnabled', {
+                    'addonid': ADDON_ID, 'enabled': False})
+        monitor.waitForAbort(1)
 
-            safe_copy(os.path.join(addon_path, 'instance-settings-1.xml'),
-                      instance_filepath, del_src=True)
-            with open(instance_filepath, 'r') as f:
-                data = f.read()
-            with open(instance_filepath, 'w') as f:
-                f.write(data.replace('Migrated Add-on Config', ADDON_NAME))
+        safe_copy(os.path.join(addon_path, 'instance-settings-1.xml'),
+                    instance_filepath, del_src=True)
+        pDialog.update(35)
+        with open(instance_filepath, 'r') as f:
+            data = f.read()
+        with open(instance_filepath, 'w') as f:
+            f.write(data.replace('Migrated Add-on Config', ADDON_NAME))
+        pDialog.update(50)
+        for file in os.listdir(addon_path):
+            if file.endswith('.bu'):
+                safe_copy(os.path.join(addon_path, file), os.path.join(
+                    addon_path, file[:-3]), del_src=True)
+        kodi_rpc('Addons.SetAddonEnabled', {
+                    'addonid': ADDON_ID, 'enabled': True})
+        pDialog.update(70)
+    else:
+        kodi_rpc('Addons.SetAddonEnabled', {
+                    'addonid': ADDON_ID, 'enabled': True})
+        pDialog.update(70)
 
-            for file in os.listdir(addon_path):
-                if file.endswith('.bu'):
-                    safe_copy(os.path.join(addon_path, file), os.path.join(
-                        addon_path, file[:-3]), del_src=True)
-            kodi_rpc('Addons.SetAddonEnabled', {
-                     'addonid': ADDON_ID, 'enabled': True})
-        else:
-            kodi_rpc('Addons.SetAddonEnabled', {
-                     'addonid': ADDON_ID, 'enabled': True})
-
-        set_kodi_setting('epg.futuredaystodisplay', 7)
-        #  set_kodi_setting('epg.ignoredbforclient', True)
-        set_kodi_setting('pvrmanager.syncchannelgroups', True)
-        set_kodi_setting('pvrmanager.preselectplayingchannel', True)
-        set_kodi_setting('pvrmanager.backendchannelorder', True)
-        set_kodi_setting('pvrmanager.usebackendchannelnumbers', True)
+    set_kodi_setting('epg.futuredaystodisplay', 7)
+    #  set_kodi_setting('epg.ignoredbforclient', True)
+    set_kodi_setting('pvrmanager.syncchannelgroups', True)
+    set_kodi_setting('pvrmanager.preselectplayingchannel', True)
+    set_kodi_setting('pvrmanager.backendchannelorder', True)
+    set_kodi_setting('pvrmanager.usebackendchannelnumbers', True)
+    pDialog.update(100)
+    pDialog.close()
     Script.notify("IPTV setup", "Epg and playlist updated")
 
     return True
