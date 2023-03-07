@@ -24,7 +24,7 @@ EPG_PATH = os.path.join(translatePath(
 M3U_CHANNEL = "\n#EXTINF:0 tvg-id=\"{tvg_id}\" tvg-name=\"{channel_name}\" group-title=\"{group_title}\" tvg-chno=\"{tvg_chno}\" tvg-logo=\"{tvg_logo}\"{catchup},{channel_name}\n{play_url}"
 EPG_SRC = "https://kodi.botallen.com/tv/epg.xml.gz"
 DICTIONARY_URL = "https://jiotvapi.cdn.jio.com/apis/v1.3/dictionary/dictionary?langId=6"
-CHANNELS_XML =  os.path.join(translatePath(ADDON.getAddonInfo("path")), "resources", "channels.xml")
+# CHANNELS_XML =  os.path.join(translatePath(ADDON.getAddonInfo("path")), "resources", "channels.xml")
 
 IMG_CONFIG = {
     "Genres": {
