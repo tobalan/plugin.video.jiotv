@@ -8,7 +8,7 @@
         <setting id="applyAllSettings0" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
     <category label="Setup">
-        <setting label="EPG URL" type="text" id="epgurl" default="https://bit.ly/3kWSsl3"/>
+        <setting id="channelsrc" type="bool" label="Channel API 1.3" default="true"/>
         <setting label="Setup EPG" type="action" id="epgsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/epg_setup/)"/>
         <setting label="Setup Simple IPTV PVR" type="action" id="pvrsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/pvrsetup/)" option="close"/>
         <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="true"/>
@@ -31,6 +31,7 @@
         <setting id="Assamese" type="bool" label="Assamese" default="true"/>
         <setting id="Urdu" type="bool" label="Urdu" default="true"/>
         <setting id="Nepali" type="bool" label="Nepali" default="true"/>
+        <setting id="Extra" type="bool" label="Extra" default="true"/>
         <setting id="applyAllSettings2" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
     <category label="More">
