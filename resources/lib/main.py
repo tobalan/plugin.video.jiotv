@@ -510,9 +510,9 @@ def epg_setup(plugin):
     pDialog = DialogProgress()
     pDialog.create('Epg setup in progress')
     # Download EPG XML file
-    # url = Settings.get_string("epgurl")
-    # if not url:
-    url = "https://cdn.jsdelivr.net/gh/mitthu786/tvepg/epg.xml.gz"
+    url = Settings.get_string("epgurl")
+    if not url or (len(url) < 5):
+        url = "https://cdn.jsdelivr.net/gh/mitthu786/tvepg/epg.xml.gz"
     payload = {}
     headers = {}
     response = requests.request("GET", url, headers=headers, data=payload)
