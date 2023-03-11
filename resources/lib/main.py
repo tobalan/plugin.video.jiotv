@@ -247,11 +247,11 @@ def show_epg(plugin, day, channel_id):
             },
             "params": {
                 "channel_id": each.get("channel_id"),
-                "showtime": None if islive else each.get("showtime", "").replace(":", ""),
-                "srno": None if islive else datetime.fromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
-                "programId": None if islive else each.get("srno", ""),
-                "begin": None if islive else datetime.utcfromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
-                "end": None if islive else datetime.utcfromtimestamp(int(each.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
+                "showtime": each.get("showtime", "").replace(":", ""),
+                "srno": datetime.fromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%d'),
+                "programId": each.get("srno", ""),
+                "begin": datetime.utcfromtimestamp(int(each.get("startEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S'),
+                "end": datetime.utcfromtimestamp(int(each.get("endEpoch", 0)*.001)).strftime('%Y%m%dT%H%M%S')
             }
         })
     if int(day) == 0:
@@ -453,15 +453,11 @@ def logout(plugin):
 # M3u Generate `route`
 @Script.register
 def m3ugen(plugin, notify="yes"):
-    pDialog = DialogProgress()
-    pDialog.create('Generating M3U')
-    pDialog.update(20)
     channels = urlquick.get(CHANNELS_SRC).json().get("result")
     r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
     dictionary = json.loads(r)
     GENRE_MAP = dictionary.get("channelCategoryMapping")
     LANG_MAP = dictionary.get("languageIdMapping")
-    pDialog.update(50)
 
     m3ustr = "#EXTM3U x-tvg-url=\"%s\"" % EPG_SRC
     for i, channel in enumerate(channels):
@@ -496,8 +492,6 @@ def m3ugen(plugin, notify="yes"):
         )
     with open(M3U_SRC, "w+") as f:
         f.write(m3ustr.replace(u'\xa0', ' ').encode('utf-8').decode('utf-8'))
-    pDialog.update(100)
-    pDialog.close()
     if notify == "yes":
         Script.notify(
             "JioTV", "Playlist updated.")
@@ -535,8 +529,8 @@ def epg_setup(plugin):
     # for channel in root.iterfind("channel"):
     #     root.remove(channel)
     pDialog.update(35)
-        # Example: Modify the program and add catchupid
-    # for channel in source_root.iterfind('channel'): 
+    # Example: Modify the program and add catchupid
+    # for channel in source_root.iterfind('channel'):
     #     new_channel = ET.Element(channel.tag, channel.attrib)
     #     for child in channel:
     #         new_child = ET.Element(child.tag, child.attrib)
@@ -576,14 +570,15 @@ def pvrsetup(plugin):
     executebuiltin(
         "RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/m3ugen/)")
     IDdoADDON = 'pvr.iptvsimple'
+
     def set_setting(id, value):
         if Addon(IDdoADDON).getSetting(id) != value:
             Addon(IDdoADDON).setSetting(id, value)
     if check_addon(IDdoADDON):
         set_setting("m3uPathType", "0")
         set_setting("m3uPath", M3U_SRC)
-        set_setting("epgPathType", "0")
-        set_setting("epgPath", EPG_PATH)
+        set_setting("epgPathType", "1")
+        set_setting("epgUrl", EPG_SRC)
         set_setting("catchupEnabled", "true")
         set_setting("catchupWatchEpgBeginBufferMins", "0")
         set_setting("catchupWatchEpgEndBufferMins", "0")
