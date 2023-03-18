@@ -1,3 +1,6 @@
+[- 2.3.1 -]
+[added] caching of reponses
+
 [- 2.3.0 -]
 [added] more extra channels
 [added] inputstream adaptive as a dependency 
