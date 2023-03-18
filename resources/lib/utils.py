@@ -22,6 +22,8 @@ from collections import defaultdict
 import socket
 import json
 
+from resources.lib.constants import CHANNELS_SRC, DICTIONARY_URL, FEATURED_SRC
+
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -42,7 +44,7 @@ def isLoggedIn(func):
     """
     @wraps(func)
     def login_wrapper(*args, **kwargs):
-        with PersistentDict("headers") as db:
+        with PersistentDict("localdb") as db:
             username = db.get("username")
             password = db.get("password")
             headers = db.get("headers")
@@ -127,7 +129,7 @@ def login(username, password, mode="unpw"):
             "dm": "ZUK ZUK Z1"
         }
         headers.update(_CREDS)
-        with PersistentDict("headers") as db:
+        with PersistentDict("localdb") as db:
             db["headers"] = headers
             # db["exp"] = time.time() + 432000
             db["exp"] = time.time() + 31536000
@@ -156,14 +158,59 @@ def sendOTPV2(mobile):
 
 
 def logout():
-    with PersistentDict("headers") as db:
+    with PersistentDict("localdb") as db:
         del db["headers"]
     Script.notify("You\'ve been logged out", "")
 
 
 def getHeaders():
-    with PersistentDict("headers") as db:
+    with PersistentDict("localdb") as db:
         return db.get("headers", False)
+
+
+def getCachedChannels():
+    with PersistentDict("localdb") as db:
+        channelList = db.get("channelList", False)
+        if not channelList:
+            try:
+                channelListResp = urlquick.get(CHANNELS_SRC).json().get("result")
+                db["channelList"] = channelListResp
+            except:
+                Script.notify("Connection error ", "Retry after sometime")
+        return db.get("channelList", False)
+    
+def getCachedDictionary():
+    with PersistentDict("localdb") as db:
+        dictionary = db.get("dictionary", False)
+        if not dictionary:
+            try:
+                r = urlquick.get(DICTIONARY_URL).text.encode(
+                    'utf8')[3:].decode('utf8')
+                db["dictionary"] = json.loads(r)
+            except:
+                Script.notify("Connection error ", "Retry after sometime")
+        return db.get("dictionary", False)
+    
+def getCachedFeatured():
+    with PersistentDict("localdb") as db:
+        featuredList = db.get("featuredList", False)
+        if not featuredList:
+            try:
+                resp = urlquick.get(FEATURED_SRC, headers={
+                    "usergroup": "tvYR7NSNn7rymo3F",
+                    "os": "android",
+                    "devicetype": "phone",
+                    "versionCode": "290"
+                }, max_age=-1).json()
+                db[featuredList] = resp.get("featuredNewData", [])
+            except:
+                Script.notify("Connection error ", "Retry after sometime")
+        return db.get("featuredList", [])
+    
+def cleanLocalCache():
+    with PersistentDict("localdb") as db:
+        del db["channelList"]
+        del db["dictionary"]
 
 
 def getChannelHeaders():
@@ -344,7 +391,7 @@ def _setup(m3uPath, epgUrl):
     instance_filepath = os.path.join(addon_path, 'instance-settings-91.xml')
 
     kodi_rpc('Addons.SetAddonEnabled', {
-                'addonid': ADDON_ID, 'enabled': False})
+        'addonid': ADDON_ID, 'enabled': False})
     pDialog.update(10)
 
     # newer PVR Simple uses instance settings that can't yet be set via python api
@@ -364,16 +411,16 @@ def _setup(m3uPath, epgUrl):
                     safe_copy(file_path, file_path+'.bu', del_src=True)
         pDialog.update(25)
         kodi_rpc('Addons.SetAddonEnabled', {
-                    'addonid': ADDON_ID, 'enabled': True})
+            'addonid': ADDON_ID, 'enabled': True})
         # wait for migration to occur
         while not os.path.exists(os.path.join(addon_path, 'instance-settings-1.xml')):
             monitor.waitForAbort(1)
         kodi_rpc('Addons.SetAddonEnabled', {
-                    'addonid': ADDON_ID, 'enabled': False})
+            'addonid': ADDON_ID, 'enabled': False})
         monitor.waitForAbort(1)
 
         safe_copy(os.path.join(addon_path, 'instance-settings-1.xml'),
-                    instance_filepath, del_src=True)
+                  instance_filepath, del_src=True)
         pDialog.update(35)
         with open(instance_filepath, 'r') as f:
             data = f.read()
@@ -385,11 +432,11 @@ def _setup(m3uPath, epgUrl):
                 safe_copy(os.path.join(addon_path, file), os.path.join(
                     addon_path, file[:-3]), del_src=True)
         kodi_rpc('Addons.SetAddonEnabled', {
-                    'addonid': ADDON_ID, 'enabled': True})
+            'addonid': ADDON_ID, 'enabled': True})
         pDialog.update(70)
     else:
         kodi_rpc('Addons.SetAddonEnabled', {
-                    'addonid': ADDON_ID, 'enabled': True})
+            'addonid': ADDON_ID, 'enabled': True})
         pDialog.update(70)
 
     set_kodi_setting('epg.futuredaystodisplay', 7)

@@ -13,8 +13,8 @@ from codequick.script import Settings
 from codequick.storage import PersistentDict
 
 # add-on imports
-from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup, kodi_rpc, Monitor, busy
-from resources.lib.constants import GET_CHANNEL_URL, FEATURED_SRC, CHANNELS_SRC, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, DICTIONARY_URL, IMG_CONFIG, EPG_PATH
+from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup, kodi_rpc, Monitor, getCachedChannels, getCachedDictionary, cleanLocalCache, getCachedFeatured
+from resources.lib.constants import GET_CHANNEL_URL, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, IMG_CONFIG, EPG_PATH
 
 # additional imports
 import urlquick
@@ -62,13 +62,7 @@ def root(plugin):
 # Shows Featured Content
 @Route.register
 def show_featured(plugin, id=None):
-    resp = urlquick.get(FEATURED_SRC, headers={
-        "usergroup": "tvYR7NSNn7rymo3F",
-        "os": "android",
-        "devicetype": "phone",
-        "versionCode": "290"
-    }, max_age=-1).json()
-    for each in resp.get("featuredNewData", []):
+    for each in getCachedFeatured():
         if id:
             if int(each.get("id", 0)) == int(id):
                 data = each.get("data", [])
@@ -140,8 +134,7 @@ def show_featured(plugin, id=None):
 # Shows Filter options
 @Route.register
 def show_listby(plugin, by):
-    r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
-    dictionary = json.loads(r)
+    dictionary = getCachedDictionary()
     GENRE_MAP = dictionary.get("channelCategoryMapping")
     LANG_MAP = dictionary.get("languageIdMapping")
     langValues = list(LANG_MAP.values())
@@ -168,9 +161,8 @@ def show_listby(plugin, by):
 # Shows channels by selected filter/category
 @Route.register
 def show_category(plugin, categoryOrLang, by):
-    resp = urlquick.get(CHANNELS_SRC).json().get("result")
-    r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
-    dictionary = json.loads(r)
+    resp = getCachedChannels()
+    dictionary = getCachedDictionary()
     GENRE_MAP = dictionary.get("channelCategoryMapping")
     LANG_MAP = dictionary.get("languageIdMapping")
 
@@ -214,7 +206,7 @@ def show_category(plugin, categoryOrLang, by):
 def show_epg(plugin, day, channel_id):
     resp = urlquick.get(CATCHUP_SRC.format(day, channel_id), max_age=-1).json()
     epg = sorted(
-        resp['epg'], key=lambda show: show['startEpoch'], reverse=True)
+        resp['epg'], key=lambda show: show['startEpoch'], reverse=False)
     livetext = '[COLOR red] [ LIVE ] [/COLOR]'
     for each in epg:
         current_epoch = int(time()*1000)
@@ -453,9 +445,8 @@ def logout(plugin):
 # M3u Generate `route`
 @Script.register
 def m3ugen(plugin, notify="yes"):
-    channels = urlquick.get(CHANNELS_SRC).json().get("result")
-    r = urlquick.get(DICTIONARY_URL).text.encode('utf8')[3:].decode('utf8')
-    dictionary = json.loads(r)
+    channels = getCachedChannels()
+    dictionary = getCachedDictionary()
     GENRE_MAP = dictionary.get("channelCategoryMapping")
     LANG_MAP = dictionary.get("languageIdMapping")
 
@@ -589,4 +580,5 @@ def pvrsetup(plugin):
 @Script.register
 def cleanup(plugin):
     urlquick.cache_cleanup(-1)
+    cleanLocalCache()
     Script.notify("Cache Cleaned", "")
