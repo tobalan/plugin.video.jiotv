@@ -191,21 +191,17 @@ def getCachedDictionary():
                 Script.notify("Connection error ", "Retry after sometime")
         return db.get("dictionary", False)
     
-def getCachedFeatured():
-    with PersistentDict("localdb") as db:
-        featuredList = db.get("featuredList", False)
-        if not featuredList:
-            try:
-                resp = urlquick.get(FEATURED_SRC, headers={
-                    "usergroup": "tvYR7NSNn7rymo3F",
-                    "os": "android",
-                    "devicetype": "phone",
-                    "versionCode": "290"
-                }, max_age=-1).json()
-                db[featuredList] = resp.get("featuredNewData", [])
-            except:
-                Script.notify("Connection error ", "Retry after sometime")
-        return db.get("featuredList", [])
+def getFeatured():
+    try:
+        resp = urlquick.get(FEATURED_SRC, headers={
+            "usergroup": "tvYR7NSNn7rymo3F",
+            "os": "android",
+            "devicetype": "phone",
+            "versionCode": "290"
+        }, max_age=-1).json()
+        return resp.get("featuredNewData", [])
+    except:
+        Script.notify("Connection error ", "Retry after sometime")
     
 def cleanLocalCache():
     with PersistentDict("localdb") as db:
