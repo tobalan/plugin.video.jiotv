@@ -10,7 +10,7 @@
     <category label="Setup">
         <setting id="channelsrc" type="bool" label="Channel API 3.0" default="true"/>
         <setting label="Setup Simple IPTV PVR" type="action" id="pvrsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/pvrsetup/)" option="close"/>
-        <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="true"/>
+        <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="false"/>
         <!-- <setting id="extraPl" type="text" label="Extra Playlist"/> -->
         <setting id="applyAllSettings1" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>

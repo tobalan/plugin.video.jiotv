@@ -573,7 +573,7 @@ def pvrsetup(plugin):
         set_setting("catchupEnabled", "true")
         set_setting("catchupWatchEpgBeginBufferMins", "0")
         set_setting("catchupWatchEpgEndBufferMins", "0")
-    _setup(M3U_SRC, EPG_PATH)
+    _setup(M3U_SRC, EPG_SRC)
 
 
 # Cache cleanup
