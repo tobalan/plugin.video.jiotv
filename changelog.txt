@@ -1,3 +1,8 @@
+[- 2.3.3 -]
+[added] updated epg url
+[added] set epg cache to false
+[added] updset useInputstreamAdaptiveforHls to true
+
 [- 2.3.2 -]
 [added] generate playlist is off by default
 

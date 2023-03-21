@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.jiotv" name="JioTV" version="2.3.2" provider-name="tobalan">
+<addon id="plugin.video.jiotv" name="JioTV" version="2.3.3" provider-name="tobalan">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.codequick" version="1.0.2"/>
@@ -24,6 +24,11 @@
         <email>kodi@botallen.com</email>
         <source>https://github.com/tobalan/plugin.video.jiotv</source>
         <news>
+[- 2.3.3 -]
+[added] updated epg url
+[added] set epg cache to false
+[added] updset useInputstreamAdaptiveforHls to true
+
 [- 2.3.2 -]
 [added] generate playlist is off by default
 

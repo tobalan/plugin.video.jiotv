@@ -570,6 +570,8 @@ def pvrsetup(plugin):
         set_setting("m3uPath", M3U_SRC)
         set_setting("epgPathType", "1")
         set_setting("epgUrl", EPG_SRC)
+        set_setting("epgCache", "false")
+        set_setting("useInputstreamAdaptiveforHls", "true")
         set_setting("catchupEnabled", "true")
         set_setting("catchupWatchEpgBeginBufferMins", "0")
         set_setting("catchupWatchEpgEndBufferMins", "0")
