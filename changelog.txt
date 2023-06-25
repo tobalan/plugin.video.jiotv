@@ -1,3 +1,9 @@
+[- 2.3.4 -]
+[added] AAC multi-audio fix (3rd Jun 2023)
+[added] Genres selection in Settings with Languages
+[added] EPG Source URL editable in Settings
+[added] Settings sections rearranged, removed 'Welcome-donate' popup.
+
 [- 2.3.3 -]
 [added] updated epg url
 [added] set epg cache to false
