@@ -1,18 +1,29 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <category label="Account">
-        <setting id="login" type="action" label="Login" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/login/)" option="close"/>
-        <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/logout/)" option="close"/>
-        <setting id="setMobile" type="action" label="Update jio number" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/setmobile/)" option="close"/>
-        <setting id="mobile" type="text" label="Jio number"/>
-        <setting id="applyAllSettings0" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
-    </category>
     <category label="Setup">
-        <setting id="channelsrc" type="bool" label="Channel API 3.0" default="true"/>
+        <setting id="quality" type="labelenum" label="Stream Quality" values="Manual|Best|High|Medium+|Medium|Low|Lowest"  default="Best"/>
+        <setting id="cleanup" type="action" label="Clear Cache" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/cleanup/)" option="close"/>
         <setting label="Setup Simple IPTV PVR" type="action" id="pvrsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/pvrsetup/)" option="close"/>
         <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="false"/>
-        <!-- <setting id="extraPl" type="text" label="Extra Playlist"/> -->
+        <setting id="channelsrc" type="bool" label="Channel API 3.0" default="false"/>
+        <setting id="epgsource" type="text" label="EPG Source" default="https://tobalan.github.io/epg.xml.gz"/>
         <setting id="applyAllSettings1" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
+    </category>
+    <category label="Genres">
+        <setting id="Entertainment" type="bool" label="Entertainment" default="true"/>
+        <setting id="Lifestyle" type="bool" label="Lifestyle" default="true"/>
+        <setting id="Infotainment" type="bool" label="Infotainment" default="true"/>
+        <setting id="Devotional" type="bool" label="Devotional" default="true"/>
+        <setting id="Jio Darshan" type="bool" label="Jio Darshan" default="true"/>
+        <setting id="News" type="bool" label="News" default="true"/>
+        <setting id="Business News" type="bool" label="Business News" default="true"/>
+        <setting id="Movies" type="bool" label="Movies" default="true"/>
+        <setting id="Music" type="bool" label="Music" default="true"/>
+        <setting id="Educational" type="bool" label="Educational" default="true"/>
+        <setting id="Kids" type="bool" label="Kids" default="true"/>
+        <setting id="Shopping" type="bool" label="Shopping" default="true"/>
+        <setting id="Sports" type="bool" label="Sports" default="true"/>
+        <setting id="applyAllSettings3" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
     <category label="Languages">
         <setting id="Hindi" type="bool" label="Hindi" default="true"/>
@@ -33,11 +44,12 @@
         <setting id="Extra" type="bool" label="Extra" default="true"/>
         <setting id="applyAllSettings2" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
-    <category label="More">
-        <setting id="cleanup" type="action" label="Clear Cache" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/cleanup/)" option="close"/>
-        <setting id="popup" type="bool" label="Disable Welcome Popup" default="true"/>
-        <setting id="quality" type="labelenum" label="Stream Quality" values="Manual|Best|High|Medium+|Medium|Low|Lowest"  default="Best"/>
-        <setting id="applyAllSettings3" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
+    <category label="Account">
+        <setting id="login" type="action" label="Login" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/login/)" option="close"/>
+        <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/logout/)" option="close"/>
+        <setting id="setMobile" type="action" label="Update Jio number" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/setmobile/)" option="close"/>
+        <setting id="mobile" type="text" label="Jio number"/>
+        <setting id="applyAllSettings0" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
 </settings>
 

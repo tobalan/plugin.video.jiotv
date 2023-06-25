@@ -134,6 +134,7 @@ def login(username, password, mode="unpw"):
             # db["exp"] = time.time() + 432000
             db["exp"] = time.time() + 31536000
             if mode == "unpw":
+                db["exp"] = time.time() + 432000
                 db["username"] = username
                 db["password"] = password
         Script.notify("Login Success", "")
@@ -204,9 +205,12 @@ def getFeatured():
         Script.notify("Connection error ", "Retry after sometime")
     
 def cleanLocalCache():
-    with PersistentDict("localdb") as db:
-        del db["channelList"]
-        del db["dictionary"]
+    try:
+        with PersistentDict("localdb") as db:
+            del db["channelList"]
+            del db["dictionary"]
+    except:
+        Script.notify("Cache", "Cleaned")
 
 
 def getChannelHeaders():

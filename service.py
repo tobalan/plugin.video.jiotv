@@ -24,9 +24,9 @@ t = threading.Thread(target=serveForever, args=(handler,))
 t.setDaemon(True)
 t.start()
 
-if not Settings.get_boolean("popup"):
-    xbmcgui.Dialog().ok("JioTV Notification",
-                        "Now you can create your custom playlist from BotAllen Dashboard. [CR]Find out more at [B]https://botallen.com/#dashboard[/B] [CR][CR]If you like this add-on then consider donating from [B]https://botallen.com/#donate[/B] [CR][CR]Github: [B]https://github.com/botallen/repository.botallen[/B] [CR]Discord: [B]https://botallen.com/discord[/B] [CR][CR][I]You can disable this popup from settings[/I]")
+# if not Settings.get_boolean("popup"):
+#     xbmcgui.Dialog().ok("JioTV Notification",
+#                         "Now you can create your custom playlist from BotAllen Dashboard. [CR]Find out more at [B]https://botallen.com/#dashboard[/B] [CR][CR]If you like this add-on then consider donating from [B]https://botallen.com/#donate[/B] [CR][CR]Github: [B]https://github.com/botallen/repository.botallen[/B] [CR]Discord: [B]https://botallen.com/discord[/B] [CR][CR][I]You can disable this popup from settings[/I]")
 
 if Settings.get_boolean("m3ugen"):
     executebuiltin(

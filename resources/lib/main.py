@@ -299,78 +299,87 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
     # Script.notify("srno", srno)
     # Script.notify("showtime", showtime)
     # Script.notify("channel_id", channel_id)
-    is_helper = inputstreamhelper.Helper("mpd", drm="com.widevine.alpha")
-    hasIs = is_helper.check_inputstream()
-    if not hasIs:
-        return
-    rjson = {
-        "channel_id": int(channel_id),
-        "stream_type": "Seek"
-    }
-    isCatchup = False
-    if showtime and srno:
-        isCatchup = True
-        rjson["showtime"] = showtime
-        rjson["srno"] = srno
-        rjson["stream_type"] = "Catchup"
-        rjson["programId"] = programId
-        rjson["begin"] = begin
-        rjson["end"] = end
-        Script.log(str(rjson), lvl=Script.INFO)
-    headers = getHeaders()
-    headers['channelid'] = str(channel_id)
-    headers['srno'] = str(uuid4()) if "srno" not in rjson else rjson["srno"]
-    res = urlquick.post(GET_CHANNEL_URL, json=rjson,
-                        headers=getChannelHeaders(), max_age=-1)
-    resp = res.json()
-    art = {}
-    onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
-    art["thumb"] = art["icon"] = IMG_CATCHUP + \
-        onlyUrl.replace(".m3u8", ".png")
-    cookie = "__hdnea__"+resp.get("result", "").split("__hdnea__")[-1]
-    headers['cookie'] = cookie
-    uriToUse = resp.get("result", "")
-    qltyopt = Settings.get_string("quality")
-    selectionType = "adaptive"
-    if qltyopt == 'Manual':
-        selectionType = "ask-quality"
-    else:
-        m3u8Headers = {}
-        m3u8Headers['user-agent'] = headers['user-agent']
-        m3u8Headers['cookie'] = cookie
-        m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers,
-                               max_age=-1, raise_for_status=True)
-        # Script.notify("m3u8url", m3u8Res.status_code)
-        m3u8String = m3u8Res.text
-        variant_m3u8 = m3u8.loads(m3u8String)
-        if variant_m3u8.is_variant and (variant_m3u8.version is None or variant_m3u8.version < 7):
-            quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
-            if isCatchup:
-                tmpurl = variant_m3u8.playlists[quality].uri
-                if "?" in tmpurl:
-                    uriToUse = uriToUse.split("?")[0].replace(onlyUrl, tmpurl)
-                else:
-                    uriToUse = uriToUse.replace(onlyUrl, tmpurl.split("?")[0])
-                del headers['cookie']
-            else:
-                uriToUse = uriToUse.replace(
-                    onlyUrl, variant_m3u8.playlists[quality].uri)
-    Script.log(uriToUse, lvl=Script.INFO)
-    return Listitem().from_dict(**{
-        "label": plugin._title,
-        "art": art,
-        "callback": uriToUse,
-        "properties": {
-            "IsPlayable": True,
-            "inputstream": "inputstream.adaptive",
-            'inputstream.adaptive.stream_selection_type': selectionType,
-            "inputstream.adaptive.chooser_resolution_secure_max": "4K",
-            "inputstream.adaptive.stream_headers": urlencode(headers),
-            "inputstream.adaptive.manifest_type": "hls",
-            "inputstream.adaptive.license_key": "|" + urlencode(headers) + "|R{SSM}|",
+    try:
+        is_helper = inputstreamhelper.Helper("mpd", drm="com.widevine.alpha")
+        hasIs = is_helper.check_inputstream()
+        if not hasIs:
+            return
+        rjson = {
+            "channel_id": int(channel_id),
+            "stream_type": "Seek"
         }
-    })
-
+        isCatchup = False
+        if showtime and srno:
+            isCatchup = True
+            rjson["showtime"] = showtime
+            rjson["srno"] = srno
+            rjson["stream_type"] = "Catchup"
+            rjson["programId"] = programId
+            rjson["begin"] = begin
+            rjson["end"] = end
+            Script.log(str(rjson), lvl=Script.INFO)
+        headers = getHeaders()
+        headers['channelid'] = str(channel_id)
+        headers['srno'] = str(
+            uuid4()) if "srno" not in rjson else rjson["srno"]
+        res = urlquick.post(GET_CHANNEL_URL, json=rjson,
+                            headers=getChannelHeaders(), max_age=-1,  raise_for_status=True)
+        # if res.status_code
+        resp = res.json()
+        art = {}
+        onlyUrl = resp.get("result", "").split("?")[0].split('/')[-1]
+        art["thumb"] = art["icon"] = IMG_CATCHUP + \
+            onlyUrl.replace(".m3u8", ".png")
+        cookie = "__hdnea__"+resp.get("result", "").split("__hdnea__")[-1]
+        headers['cookie'] = cookie
+        uriToUse = resp.get("result", "")
+        qltyopt = Settings.get_string("quality")
+        selectionType = "adaptive"
+        if qltyopt == 'Manual':
+            selectionType = "ask-quality"
+        else:
+            m3u8Headers = {}
+            m3u8Headers['user-agent'] = headers['user-agent']
+            m3u8Headers['cookie'] = cookie
+            m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers,
+                                   max_age=-1, raise_for_status=True)
+            # Script.notify("m3u8url", m3u8Res.status_code)
+            m3u8String = m3u8Res.text
+            variant_m3u8 = m3u8.loads(m3u8String)
+            if variant_m3u8.is_variant and (variant_m3u8.version is None or variant_m3u8.version < 7):
+                quality = quality_to_enum(qltyopt, len(variant_m3u8.playlists))
+                if isCatchup:
+                    tmpurl = variant_m3u8.playlists[quality].uri
+                    if "?" in tmpurl:
+                        uriToUse = uriToUse.split(
+                            "?")[0].replace(onlyUrl, tmpurl)
+                    else:
+                        uriToUse = uriToUse.replace(
+                            onlyUrl, tmpurl.split("?")[0])
+                    del headers['cookie']
+                else:
+                    uriToUse = uriToUse.replace(
+                        onlyUrl, variant_m3u8.playlists[quality].uri)
+        Script.log(uriToUse, lvl=Script.INFO)
+        return Listitem().from_dict(**{
+            "label": plugin._title,
+            "art": art,
+            "callback": uriToUse,
+            "properties": {
+                "IsPlayable": True,
+                "inputstream": "inputstream.adaptive",
+                'inputstream.adaptive.stream_selection_type': selectionType,
+                "inputstream.adaptive.chooser_resolution_secure_max": "4K",
+                "inputstream.adaptive.manifest_headers": urlencode(headers),
+                "inputstream.adaptive.manifest_type": "hls",
+                "inputstream.adaptive.license_key": "|" + urlencode(headers) + "|R{SSM}|",
+            }
+        })
+    except Exception as e:
+        Script.notify("Login Error", "Session expired. Please login again")
+        executebuiltin(
+            "RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/login/)")
+        return False
 
 # Login `route` to access from Settings
 @Script.register

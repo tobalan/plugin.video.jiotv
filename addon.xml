@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.jiotv" name="JioTV" version="2.3.3" provider-name="tobalan">
+<addon id="plugin.video.jiotv" name="JioTV" version="2.3.4" provider-name="tobalan">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.codequick" version="1.0.2"/>
         <import addon="script.module.inputstreamhelper" version="0.5.10"/>
-        <import addon="inputstream.adaptive" minversion="2.6.6"/>
+        <import addon="inputstream.adaptive" version="20.3.2"/>
         <import addon="script.module.m3u8" version="0.5.4"/>
         <!-- <import addon="repository.botallen" version="2.0.0"/> -->
         <!-- <import addon="script.module.web-pdb" /> -->
@@ -24,6 +24,12 @@
         <email>kodi@botallen.com</email>
         <source>https://github.com/tobalan/plugin.video.jiotv</source>
         <news>
+[- 2.3.4 -]
+[added] AAC multi-audio fix (3rd Jun 2023)
+[added] Genres selection in Settings with Languages
+[added] EPG Source URL editable in Settings
+[added] Settings sections rearranged, removed 'Welcome-donate' popup.
+
 [- 2.3.3 -]
 [added] updated epg url
 [added] set epg cache to false
