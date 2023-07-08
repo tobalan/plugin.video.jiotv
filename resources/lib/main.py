@@ -158,7 +158,30 @@ def show_listby(plugin, by):
         })
 
 
+def is_lang_allowed(langId, langMap):
+    if langId in langMap.keys():
+        return Settings.get_boolean(langMap[langId])
+    else:
+        return Settings.get_boolean("Extra")
+
+
+def is_genre_allowed(id, map):
+    if id in map.keys():
+        return Settings.get_boolean(map[id])
+    else:
+        return False
+
+
+def isPlayAbleLang(each, LANG_MAP):
+    return not each.get("channelIdForRedirect") and is_lang_allowed(str(each.get("channelLanguageId")), LANG_MAP)
+
+
+def isPlayAbleGenre(each, GENRE_MAP):
+    return not each.get("channelIdForRedirect") and is_genre_allowed(str(each.get("channelCategoryId")), GENRE_MAP)
+
 # Shows channels by selected filter/category
+
+
 @Route.register
 def show_category(plugin, categoryOrLang, by):
     resp = getCachedChannels()
@@ -169,39 +192,52 @@ def show_category(plugin, categoryOrLang, by):
     def fltr(x):
         fby = by.lower()[:-1]
         if fby == "genre":
-            return GENRE_MAP[str(x.get("channelCategoryId"))] == categoryOrLang
+            return GENRE_MAP[str(x.get("channelCategoryId"))] == categoryOrLang and isPlayAbleLang(x, LANG_MAP)
         else:
             if (categoryOrLang == 'Extra'):
-                return str(x.get("channelLanguageId")) not in LANG_MAP.keys()
+                return str(x.get("channelLanguageId")) not in LANG_MAP.keys() and isPlayAbleGenre(x, GENRE_MAP)
             else:
                 if (str(x.get("channelLanguageId")) not in LANG_MAP.keys()):
                     return False
-                return LANG_MAP[str(x.get("channelLanguageId"))] == categoryOrLang
-
-    for each in filter(fltr, resp):
-        if each.get("channelIdForRedirect") or not Settings.get_boolean(LANG_MAP[str(each.get("channelLanguageId"))]):
-            continue
-        litm = Listitem.from_dict(**{
-            "label": each.get("channel_name"),
-            "art": {
-                "thumb": IMG_CATCHUP + each.get("logoUrl"),
-                "icon": IMG_CATCHUP + each.get("logoUrl"),
-                "fanart": IMG_CATCHUP + each.get("logoUrl"),
-                "clearlogo": IMG_CATCHUP + each.get("logoUrl"),
-                "clearart": IMG_CATCHUP + each.get("logoUrl"),
-            },
-            "callback": play,
-            "params": {
-                "channel_id": each.get("channel_id")
-            }
-        })
-        if each.get("isCatchupAvailable"):
-            litm.context.container(show_epg, "Catchup",
-                                   0, each.get("channel_id"))
-        yield litm
-
+                return LANG_MAP[str(x.get("channelLanguageId"))] == categoryOrLang and isPlayAbleGenre(x, GENRE_MAP)
+    try:
+        flist = list(filter(fltr, resp))
+        if len(flist) < 1:
+            yield Listitem.from_dict(**{
+                "label": "No Results Found, Go Back",
+                "callback": show_listby,
+                "params": {
+                    "by": by
+                }
+            })
+        else:
+            for each in flist:
+                litm = Listitem.from_dict(**{
+                    "label": each.get("channel_name"),
+                    "art": {
+                        "thumb": IMG_CATCHUP + each.get("logoUrl"),
+                        "icon": IMG_CATCHUP + each.get("logoUrl"),
+                        "fanart": IMG_CATCHUP + each.get("logoUrl"),
+                        "clearlogo": IMG_CATCHUP + each.get("logoUrl"),
+                        "clearart": IMG_CATCHUP + each.get("logoUrl"),
+                    },
+                    "callback": play,
+                    "params": {
+                        "channel_id": each.get("channel_id")
+                    }
+                })
+                if each.get("isCatchupAvailable"):
+                    litm.context.container(show_epg, "Catchup",
+                                           0, each.get("channel_id"))
+                yield litm
+    except Exception as e:
+        Script.notify("Error", e)
+        monitor.waitForAbort(1)
+        return False
 
 # Shows EPG container from Context menu
+
+
 @Route.register
 def show_epg(plugin, day, channel_id):
     resp = urlquick.get(CATCHUP_SRC.format(day, channel_id), max_age=-1).json()
