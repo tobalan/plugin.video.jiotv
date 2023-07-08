@@ -179,7 +179,7 @@ def show_category(plugin, categoryOrLang, by):
                 return LANG_MAP[str(x.get("channelLanguageId"))] == categoryOrLang
 
     for each in filter(fltr, resp):
-        if each.get("channelIdForRedirect") or not Settings.get_boolean(each.get("channelLanguageId")):
+        if each.get("channelIdForRedirect") or not Settings.get_boolean(LANG_MAP[str(each.get("channelLanguageId"))]):
             continue
         litm = Listitem.from_dict(**{
             "label": each.get("channel_name"),
