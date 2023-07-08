@@ -14,7 +14,7 @@ from codequick.storage import PersistentDict
 
 # add-on imports
 from resources.lib.utils import getTokenParams, getHeaders, isLoggedIn, login as ULogin, logout as ULogout, check_addon, sendOTPV2, get_local_ip, getChannelHeaders, quality_to_enum, _setup, kodi_rpc, Monitor, getCachedChannels, getCachedDictionary, cleanLocalCache, getFeatured
-from resources.lib.constants import GET_CHANNEL_URL, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, IMG_CONFIG, EPG_PATH
+from resources.lib.constants import GET_CHANNEL_URL, IMG_CATCHUP, PLAY_URL, IMG_CATCHUP_SHOWS, CATCHUP_SRC, M3U_SRC, EPG_SRC, M3U_CHANNEL, IMG_CONFIG, EPG_PATH, ADDON, ADDON_ID
 
 # additional imports
 import urlquick
@@ -260,33 +260,6 @@ def show_epg(plugin, day, channel_id):
             })
 
 
-@Resolver.register
-@isLoggedIn
-def play_ex(plugin, dt=None):
-    is_helper = inputstreamhelper.Helper(
-        dt.get("proto", "mpd"), drm=dt.get("drm"))
-    if is_helper.check_inputstream():
-        licenseUrl = dt.get("lUrl") and dt.get("lUrl").replace("{HEADERS}", urlencode(
-            getHeaders())).replace("{TOKEN}", urlencode(getTokenParams()))
-        art = {}
-        if dt.get("default_logo"):
-            art['thumb'] = art['icon'] = IMG_CATCHUP + \
-                dt.get("default_logo")
-        return Listitem().from_dict(**{
-            "label": dt.get("label") or plugin._title,
-            "art": art or None,
-            "callback": dt.get("pUrl"),
-            "properties": {
-                "IsPlayable": True,
-                "inputstream": is_helper.inputstream_addon,
-                "inputstream.adaptive.stream_headers": dt.get("hdrs"),
-                "inputstream.adaptive.manifest_type": dt.get("proto", "mpd"),
-                "inputstream.adaptive.license_type": dt.get("drm"),
-                "inputstream.adaptive.license_key": licenseUrl,
-            }
-        })
-
-
 # Play live stream/ catchup according to params.
 # Also insures that user is logged in.
 @Resolver.register
@@ -376,12 +349,12 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
             }
         })
     except Exception as e:
-        Script.notify("Login Error", "Session expired. Please login again")
-        executebuiltin(
-            "RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/login/)")
+        Script.notify("Error while playback , Check connection", e)
         return False
 
 # Login `route` to access from Settings
+
+
 @Script.register
 def login(plugin):
     method = Dialog().yesno("Login", "Select Login Method",
@@ -393,6 +366,7 @@ def login(plugin):
             mobile = Settings.get_string("mobile")
             if not mobile or (len(mobile) != 10):
                 mobile = Dialog().numeric(0, "Enter your Jio mobile number")
+                ADDON.setSetting('mobile', mobile)
             error = sendOTPV2(mobile)
             if error:
                 Script.notify("Login Error", error)
@@ -419,13 +393,11 @@ def login(plugin):
 
 @Script.register
 def setmobile(plugin):
-    ADDON_ID = 'plugin.video.jiotv'
-    addon = Addon(ADDON_ID)
     prevMobile = Settings.get_string("mobile")
     mobile = Dialog().numeric(0, "Update Jio mobile number", prevMobile)
     kodi_rpc('Addons.SetAddonEnabled', {
         'addonid': ADDON_ID, 'enabled': False})
-    addon.setSetting('mobile', mobile)
+    ADDON.setSetting('mobile', mobile)
     kodi_rpc('Addons.SetAddonEnabled', {
         'addonid': ADDON_ID, 'enabled': True})
     monitor.waitForAbort(1)
@@ -434,7 +406,6 @@ def setmobile(plugin):
 
 @Script.register
 def applyall(plugin):
-    ADDON_ID = 'plugin.video.jiotv'
     kodi_rpc('Addons.SetAddonEnabled', {
         'addonid': ADDON_ID, 'enabled': False})
     monitor.waitForAbort(1)
