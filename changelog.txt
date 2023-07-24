@@ -1,3 +1,19 @@
+[- 2.3.8 -]
+[added] support to play mpd streams
+
+[- 2.3.7 -]
+[added] fix for runtime error in channel list
+
+[- 2.3.6 -]
+[added] language filter
+
+[- 2.3.5 -]
+[added] handle playback exceptions
+[added] remove unused code
+[added] save mobile no automatically on login
+[added] added request dependency for lower version
+[added] revert inputstreamhelper dependency version
+
 [- 2.3.4 -]
 [added] AAC multi-audio fix (3rd Jun 2023)
 [added] Genres selection in Settings with Languages
