@@ -283,10 +283,11 @@ def quality_to_enum(quality_str, arr_len):
     """Converts quality into a numeric value. Max clips to fall within valid bounds."""
     mapping = {
         'Best': arr_len-1,
-        'High': 4,
-        'Medium+': 3,
-        'Medium': 2,
-        'Low': 1,
+        'High': max(arr_len-2, arr_len-3, 0),
+        'Medium+': max(arr_len-3, arr_len-4, 0),
+        'Medium': max(2, arr_len-3),
+        'Low': min(2, arr_len-3),
+        'Lower': 1,
         'Lowest': 0,
     }
     if quality_str in mapping:
