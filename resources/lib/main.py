@@ -240,7 +240,8 @@ def show_category(plugin, categoryOrLang, by):
 
 @Route.register
 def show_epg(plugin, day, channel_id):
-    resp = urlquick.get(CATCHUP_SRC.format(day, channel_id), max_age=-1).json()
+    resp = urlquick.get(CATCHUP_SRC.format(day, channel_id),
+                        verify=False, max_age=-1).json()
     epg = sorted(
         resp['epg'], key=lambda show: show['startEpoch'], reverse=False)
     livetext = '[COLOR red] [ LIVE ] [/COLOR]'
@@ -331,7 +332,7 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
         headers['channelid'] = str(channel_id)
         headers['srno'] = str(
             uuid4()) if "srno" not in rjson else rjson["srno"]
-        res = urlquick.post(GET_CHANNEL_URL, json=rjson,
+        res = urlquick.post(GET_CHANNEL_URL, json=rjson, verify=False,
                             headers=getChannelHeaders(), max_age=-1,  raise_for_status=True)
         # if res.status_code
         resp = res.json()
@@ -344,13 +345,30 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
         uriToUse = resp.get("result", "")
         qltyopt = Settings.get_string("quality")
         selectionType = "adaptive"
-        if qltyopt == 'Manual':
+        isMpd = Settings.get_boolean("usempd") and resp.get("mpd", False)
+        # Script.log("LOGGINANIMAX", lvl=Script.INFO)
+        # Script.log(str(resp), lvl=Script.INFO)
+        if isMpd:
+            # is mpd url
+            license_headers = headers
+            license_headers['Content-type'] = 'application/octet-stream'
+            # Script.notify("mpd url", "notice")
+            uriToUse = resp.get("mpd", "").get("result", "")
+            license_config = {
+                'license_server_url': resp.get("mpd", "").get("key", ""),
+                'headers': urlencode(license_headers),
+                'post_data': 'H{SSM}',
+                'response_data': ''
+            }
+        if qltyopt == 'Ask-me':
             selectionType = "ask-quality"
-        else:
+        if qltyopt == 'Manual':
+            selectionType = "manual-osd"
+        if not isMpd and not qltyopt == 'Manual':
             m3u8Headers = {}
             m3u8Headers['user-agent'] = headers['user-agent']
             m3u8Headers['cookie'] = cookie
-            m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers,
+            m3u8Res = urlquick.get(uriToUse, headers=m3u8Headers, verify=False,
                                    max_age=-1, raise_for_status=True)
             # Script.notify("m3u8url", m3u8Res.status_code)
             m3u8String = m3u8Res.text
@@ -373,15 +391,16 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
         return Listitem().from_dict(**{
             "label": plugin._title,
             "art": art,
-            "callback": uriToUse,
+            "callback": uriToUse+"|verifypeer=false",
             "properties": {
                 "IsPlayable": True,
                 "inputstream": "inputstream.adaptive",
                 'inputstream.adaptive.stream_selection_type': selectionType,
                 "inputstream.adaptive.chooser_resolution_secure_max": "4K",
                 "inputstream.adaptive.manifest_headers": urlencode(headers),
-                "inputstream.adaptive.manifest_type": "hls",
-                "inputstream.adaptive.license_key": "|" + urlencode(headers) + "|R{SSM}|",
+                "inputstream.adaptive.manifest_type": "mpd" if isMpd else "hls",
+                "inputstream.adaptive.license_type": 'com.widevine.alpha',
+                "inputstream.adaptive.license_key": '|'.join(license_config.values()) if isMpd else "|" + urlencode(headers) + "|R{SSM}|",
             }
         })
     except Exception as e:

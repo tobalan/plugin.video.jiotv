@@ -174,27 +174,30 @@ def getCachedChannels():
         channelList = db.get("channelList", False)
         if not channelList:
             try:
-                channelListResp = urlquick.get(CHANNELS_SRC).json().get("result")
+                channelListResp = urlquick.get(
+                    CHANNELS_SRC, verify=False).json().get("result")
                 db["channelList"] = channelListResp
             except:
                 Script.notify("Connection error ", "Retry after sometime")
         return db.get("channelList", False)
-    
+
+
 def getCachedDictionary():
     with PersistentDict("localdb") as db:
         dictionary = db.get("dictionary", False)
         if not dictionary:
             try:
-                r = urlquick.get(DICTIONARY_URL).text.encode(
+                r = urlquick.get(DICTIONARY_URL, verify=False).text.encode(
                     'utf8')[3:].decode('utf8')
                 db["dictionary"] = json.loads(r)
             except:
                 Script.notify("Connection error ", "Retry after sometime")
         return db.get("dictionary", False)
-    
+
+
 def getFeatured():
     try:
-        resp = urlquick.get(FEATURED_SRC, headers={
+        resp = urlquick.get(FEATURED_SRC, verify=False, headers={
             "usergroup": "tvYR7NSNn7rymo3F",
             "os": "android",
             "devicetype": "phone",
@@ -203,7 +206,8 @@ def getFeatured():
         return resp.get("featuredNewData", [])
     except:
         Script.notify("Connection error ", "Retry after sometime")
-    
+
+
 def cleanLocalCache():
     try:
         with PersistentDict("localdb") as db:

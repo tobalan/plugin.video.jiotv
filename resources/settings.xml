@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
     <category label="Setup">
-        <setting id="quality" type="labelenum" label="Stream Quality" values="Manual|Best|High|Medium+|Medium|Low|Lowest"  default="Best"/>
+        <setting id="quality" type="labelenum" label="Stream Quality" values="Manual|Ask-me|Best|High|Medium+|Medium|Low|Lowest"  default="Best"/>
         <setting id="cleanup" type="action" label="Clear Cache" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/cleanup/)" option="close"/>
         <setting label="Setup Simple IPTV PVR" type="action" id="pvrsetup" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/pvrsetup/)" option="close"/>
         <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="false"/>
         <setting id="channelsrc" type="bool" label="Channel API 3.0" default="false"/>
+        <setting id="usempd" type="bool" label="Use mpd" default="false"/>
         <setting id="epgsource" type="text" label="EPG Source" default="https://tobalan.github.io/epg.xml.gz"/>
         <setting id="applyAllSettings1" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
@@ -52,4 +53,3 @@
         <setting id="applyAllSettings0" type="action" label="Apply all settings" action="RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/applyall/)" option="close"/>
     </category>
 </settings>
-
