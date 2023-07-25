@@ -11,7 +11,7 @@
             option="close" />
         <setting id="m3ugen" type="bool" label="Generate Playlist On Startup" default="false" />
         <setting id="channelsrc" type="bool" label="Channel API 3.0" default="false" />
-        <setting id="usempd" type="bool" label="Use mpd" default="false" />
+        <setting id="usempd" type="bool" label="Play mpd streams(experimental)" default="false" />
         <setting id="epgsource" type="text" label="EPG Source"
             default="https://tobalan.github.io/epg.xml.gz" />
         <setting id="applyAllSettings1" type="action" label="Apply all settings"
