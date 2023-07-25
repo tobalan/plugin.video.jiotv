@@ -352,7 +352,7 @@ def play(plugin, channel_id, showtime=None, srno=None, programId=None, begin=Non
             # is mpd url
             license_headers = headers
             license_headers['Content-type'] = 'application/octet-stream'
-            mpdnotice = Settings.get_string("mpdnotice")
+            mpdnotice = Settings.get_boolean("mpdnotice")
             if mpdnotice:
                 Script.notify("Notice!", "Using the Experimental MPD URL", icon=Script.NOTIFY_INFO)
             # Script.notify("mpd url", "notice")
