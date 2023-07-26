@@ -203,9 +203,13 @@ msgid "Logout"
 msgstr ""
 
 msgctxt "#33046"
-msgid "Update Jio number"
+msgid "Update Jio Number"
 msgstr ""
 
 msgctxt "#33047"
-msgid "Jio number"
+msgid "Jio Number"
+msgstr ""
+
+msgctxt "#33048"
+msgid "Enable the channel numbering in addon's submenus"
 msgstr ""

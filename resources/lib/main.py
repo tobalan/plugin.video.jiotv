@@ -284,9 +284,14 @@ def show_category(plugin, categoryOrLang, by):
             )
         else:
             for each in flist:
+                if Settings.get_boolean("number_toggle"):
+                    channel_number = int(each.get("channel_order")) + 1
+                    channel_name = str(channel_number) + " " + each.get("channel_name")
+                else:
+                    channel_name = each.get("channel_name")
                 litm = Listitem.from_dict(
                     **{
-                        "label": each.get("channel_name"),
+                        "label": channel_name,
                         "art": {
                             "thumb": IMG_CATCHUP + each.get("logoUrl"),
                             "icon": IMG_CATCHUP + each.get("logoUrl"),
@@ -447,8 +452,7 @@ def play(
             # is mpd url
             license_headers = headers
             license_headers["Content-type"] = "application/octet-stream"
-            mpdnotice = Settings.get_boolean("mpdnotice")
-            if mpdnotice:
+            if Settings.get_boolean("mpdnotice"):
                 Script.notify(
                     "Notice!", "Using the Experimental MPD URL", icon=Script.NOTIFY_INFO
                 )
