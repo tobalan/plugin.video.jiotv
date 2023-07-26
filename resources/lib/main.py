@@ -52,6 +52,7 @@ import urlquick
 from uuid import uuid4
 from urllib.parse import urlencode
 import inputstreamhelper
+import json
 from time import time, sleep
 from datetime import datetime, timedelta, date
 import m3u8
