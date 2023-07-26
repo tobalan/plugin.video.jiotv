@@ -1,11 +1,11 @@
-# Kodi Media Center language file
+# plugin.video.jiotv language file
 # Addon Name: JioTV
 # Addon id: plugin.video.jiotv
-# Addon Provider: botallen
+# Addon Provider: tobalan
 msgid ""
 msgstr ""
 "Project-Id-Version: XBMC Addons\n"
-"Report-Msgid-Bugs-To: alanwww1@xbmc.org\n"
+""
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Kodi Translation Team\n"
@@ -18,42 +18,194 @@ msgstr ""
 
 #This is a comment
 
-msgctxt "#32000"
-msgid "Example"
-msgstr ""
-
-msgctxt "#32001"
-msgid "Debug"
-msgstr ""
-
-msgctxt "#32002"
-msgid "Account"
-msgstr ""
-
-msgctxt "#32003"
-msgid "Username"
-msgstr ""
-
-msgctxt "#32004"
-msgid "Password"
-msgstr ""
-
-msgctxt "#32005"
-msgid "Logout"
-msgstr ""
-
-msgctxt "#32006"
-msgid "Stream"
-msgstr ""
-
-msgctxt "#32007"
-msgid "Quality"
-msgstr ""
-
-msgctxt "#32008"
+msgctxt "#33000"
 msgid "Setup"
 msgstr ""
 
-msgctxt "#32009"
+msgctxt "#33001"
+msgid "Stream Quality"
+msgstr ""
+
+msgctxt "#33002"
+msgid "Clear Cache"
+msgstr ""
+
+msgctxt "#33003"
 msgid "Setup Simple IPTV PVR"
+msgstr ""
+
+msgctxt "#33004"
+msgid "Generate Playlist On Startup"
+msgstr ""
+
+msgctxt "#33005"
+msgid "Use the Channel API 3.0"
+msgstr ""
+
+msgctxt "#33006"
+msgid "Enable MPEG-DASH (MPD) stream if available (Experimental)"
+msgstr ""
+
+msgctxt "#33007"
+msgid "Enable the MPD URL notice"
+msgstr ""
+
+msgctxt "#33008"
+msgid "EPG Source"
+msgstr ""
+
+msgctxt "#33009"
+msgid "Apply all settings"
+msgstr ""
+
+msgctxt "#33010"
+msgid "Genres"
+msgstr ""
+
+msgctxt "#33011"
+msgid "Entertainment"
+msgstr ""
+
+msgctxt "#33012"
+msgid "Lifestyle"
+msgstr ""
+
+msgctxt "#33013"
+msgid "Infotainment"
+msgstr ""
+
+msgctxt "#33014"
+msgid "Devotional"
+msgstr ""
+
+msgctxt "#33015"
+msgid "Jio Darshan"
+msgstr ""
+
+msgctxt "#33016"
+msgid "News"
+msgstr ""
+
+msgctxt "#33017"
+msgid "Business News"
+msgstr ""
+
+msgctxt "#33018"
+msgid "Movies"
+msgstr ""
+
+msgctxt "#33019"
+msgid "Music"
+msgstr ""
+
+msgctxt "#33020"
+msgid "Educational"
+msgstr ""
+
+msgctxt "#33021"
+msgid "Kids"
+msgstr ""
+
+msgctxt "#33022"
+msgid "Shopping"
+msgstr ""
+
+msgctxt "#33023"
+msgid "Sports"
+msgstr ""
+
+msgctxt "#33024"
+msgid "Apply all settings"
+msgstr ""
+
+msgctxt "#33025"
+msgid "Languages"
+msgstr ""
+
+msgctxt "#33026"
+msgid "Hindi"
+msgstr ""
+
+msgctxt "#33027"
+msgid "English"
+msgstr ""
+
+msgctxt "#33028"
+msgid "Marathi"
+msgstr ""
+
+msgctxt "#33029"
+msgid "Telugu"
+msgstr ""
+
+msgctxt "#33030"
+msgid "Kannada"
+msgstr ""
+
+msgctxt "#33031"
+msgid "Tamil"
+msgstr ""
+
+msgctxt "#33032"
+msgid "Punjabi"
+msgstr ""
+
+msgctxt "#33033"
+msgid "Gujarati"
+msgstr ""
+
+msgctxt "#33034"
+msgid "Bengali"
+msgstr ""
+
+msgctxt "#33035"
+msgid "Bhojpuri"
+msgstr ""
+
+msgctxt "#33036"
+msgid "Malayalam"
+msgstr ""
+
+msgctxt "#33037"
+msgid "Odia"
+msgstr ""
+
+msgctxt "#33038"
+msgid "Assamese"
+msgstr ""
+
+msgctxt "#33039"
+msgid "Urdu"
+msgstr ""
+
+msgctxt "#33040"
+msgid "Nepali"
+msgstr ""
+
+msgctxt "#33041"
+msgid "Extra"
+msgstr ""
+
+msgctxt "#33042"
+msgid "Apply all settings"
+msgstr ""
+
+msgctxt "#33043"
+msgid "Account"
+msgstr ""
+
+msgctxt "#33044"
+msgid "Login"
+msgstr ""
+
+msgctxt "#33045"
+msgid "Logout"
+msgstr ""
+
+msgctxt "#33046"
+msgid "Update Jio number"
+msgstr ""
+
+msgctxt "#33047"
+msgid "Jio number"
 msgstr ""
