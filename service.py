@@ -14,7 +14,6 @@ def serveForever(handler):
         handler.serve_forever()
     except Exception as e:
         Script.log(e, lvl=Script.DEBUG)
-        pass
 
 
 ThreadingTCPServer.allow_reuse_address = True
@@ -30,7 +29,8 @@ t.start()
 
 if Settings.get_boolean("m3ugen"):
     executebuiltin(
-        "RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/m3ugen/?notify=no)")
+        "RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/m3ugen/?notify=no)"
+    )
 
 monitor = Monitor()
 while not monitor.abortRequested():
