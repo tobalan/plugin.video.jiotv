@@ -93,6 +93,14 @@ def root(plugin):
             }
         )
 
+    yield Listitem.from_dict(
+        **{
+            "label": "Tree View (Genre -> Language)",
+            "callback": Route.ref("/resources/lib/main:show_listby"),
+            "params": {"by": "Genres", "sub_lang_view": True},
+        }
+    )
+
 
 # Shows Featured Content
 @Route.register
@@ -131,10 +139,12 @@ def show_featured(plugin, id=None):
                     }
                     if child.get("showStatus") == "Now":
                         info_dict["label"] = info_dict["info"]["title"] = (
-                            child.get("showname", "") + " [COLOR red] [ LIVE ] [/COLOR]"
+                            child.get("showname", "") +
+                            " [COLOR red] [ LIVE ] [/COLOR]"
                         )
                         info_dict["callback"] = play
-                        info_dict["params"] = {"channel_id": child.get("channel_id")}
+                        info_dict["params"] = {
+                            "channel_id": child.get("channel_id")}
                         yield Listitem.from_dict(**info_dict)
                     elif child.get("showStatus") == "future":
                         timetext = datetime.fromtimestamp(
@@ -196,7 +206,7 @@ def show_featured(plugin, id=None):
 
 # Shows Filter options
 @Route.register
-def show_listby(plugin, by):
+def show_listby(plugin, by, sub_lang_view=False, genre=None):
     dictionary = getCachedDictionary()
     GENRE_MAP = dictionary.get("channelCategoryMapping")
     LANG_MAP = dictionary.get("languageIdMapping")
@@ -209,12 +219,23 @@ def show_listby(plugin, by):
     for each in CONFIG[by]:
         tvImg = IMG_CONFIG[by].get(each, {}).get("tvImg", "")
         promoImg = IMG_CONFIG[by].get(each, {}).get("promoImg", "")
+
+        callback = Route.ref("/resources/lib/main:show_category")
+        params = {"categoryOrLang": each, "by": by}
+        if sub_lang_view == True:  # langauge is sub view of genre or not, for tree view
+            # set params that recursive call this route but list language and also have genre
+            callback = Route.ref("/resources/lib/main:show_listby")
+            params = {"by": "Languages", "genre": each}
+        if genre is not None:  # when we get genre we call show category with new params
+            callback = Route.ref("/resources/lib/main:show_category")
+            params = {"categoryOrLang": each, "by": by, "genre": genre}
+
         yield Listitem.from_dict(
             **{
                 "label": each,
                 "art": {"thumb": tvImg, "icon": tvImg, "fanart": promoImg},
-                "callback": Route.ref("/resources/lib/main:show_category"),
-                "params": {"categoryOrLang": each, "by": by},
+                "callback": callback,
+                "params": params,
             }
         )
 
@@ -249,13 +270,37 @@ def isPlayAbleGenre(each, GENRE_MAP):
 
 
 @Route.register
-def show_category(plugin, categoryOrLang, by):
+def show_category(plugin, categoryOrLang, by, genre=None):
     resp = getCachedChannels()
     dictionary = getCachedDictionary()
     GENRE_MAP = dictionary.get("channelCategoryMapping")
     LANG_MAP = dictionary.get("languageIdMapping")
 
+    def fltr_treeview(x):  # filter method for tree view folder structure
+        # this method call when genre is set, means categoryOrLang will have language data
+        lang = categoryOrLang
+
+        is_genre_matched = GENRE_MAP[
+            str(x.get("channelCategoryId"))
+        ] == genre and isPlayAbleLang(x, LANG_MAP)
+        if lang == "Extra":  # When language is fall in extra section not in other
+            # extra section is place where all other language come which are not in predefined list of language
+            is_lang_extra = str(
+                x.get("channelLanguageId")
+            ) not in LANG_MAP.keys() and isPlayAbleGenre(x, GENRE_MAP)
+            return is_lang_extra and is_genre_matched
+        else:
+            # validate if lang in list and then language match with selected
+            is_lang_matched = str(x.get("channelLanguageId")) in LANG_MAP.keys() and LANG_MAP[
+                str(x.get("channelLanguageId"))
+            ] == lang and isPlayAbleGenre(x, GENRE_MAP)
+            return is_lang_matched and is_genre_matched
+
     def fltr(x):
+        if genre is not None:  # when genre is not None means passed
+            # means it is treeview
+            return fltr_treeview(x)
+
         fby = by.lower()[:-1]
         if fby == "genre":
             return GENRE_MAP[
@@ -287,7 +332,8 @@ def show_category(plugin, categoryOrLang, by):
             for each in flist:
                 if Settings.get_boolean("number_toggle"):
                     channel_number = int(each.get("channel_order")) + 1
-                    channel_name = str(channel_number) + " " + each.get("channel_name")
+                    channel_name = str(channel_number) + \
+                        " " + each.get("channel_name")
                 else:
                     channel_name = each.get("channel_name")
                 litm = Listitem.from_dict(
@@ -323,7 +369,8 @@ def show_epg(plugin, day, channel_id):
     resp = urlquick.get(
         CATCHUP_SRC.format(day, channel_id), verify=False, max_age=-1
     ).json()
-    epg = sorted(resp["epg"], key=lambda show: show["startEpoch"], reverse=False)
+    epg = sorted(
+        resp["epg"], key=lambda show: show["startEpoch"], reverse=False)
     livetext = "[COLOR red] [ LIVE ] [/COLOR]"
     for each in epg:
         current_epoch = int(time() * 1000)
@@ -427,7 +474,8 @@ def play(
             Script.log(str(rjson), lvl=Script.INFO)
         headers = getHeaders()
         headers["channelid"] = str(channel_id)
-        headers["srno"] = str(uuid4()) if "srno" not in rjson else rjson["srno"]
+        headers["srno"] = str(
+            uuid4()) if "srno" not in rjson else rjson["srno"]
         enableHost = Settings.get_boolean("enablehost")
         res = urlquick.post(
             GET_CHANNEL_URL,
@@ -441,7 +489,8 @@ def play(
         resp = res.json()
         art = {}
         onlyUrl = resp.get("result", "").split("?")[0].split("/")[-1]
-        art["thumb"] = art["icon"] = IMG_CATCHUP + onlyUrl.replace(".m3u8", ".png")
+        art["thumb"] = art["icon"] = IMG_CATCHUP + \
+            onlyUrl.replace(".m3u8", ".png")
         cookie = "__hdnea__" + resp.get("result", "").split("__hdnea__")[-1]
         headers["cookie"] = cookie
         uriToUse = resp.get("result", "")
@@ -491,9 +540,11 @@ def play(
                 if isCatchup:
                     tmpurl = variant_m3u8.playlists[quality].uri
                     if "?" in tmpurl:
-                        uriToUse = uriToUse.split("?")[0].replace(onlyUrl, tmpurl)
+                        uriToUse = uriToUse.split(
+                            "?")[0].replace(onlyUrl, tmpurl)
                     else:
-                        uriToUse = uriToUse.replace(onlyUrl, tmpurl.split("?")[0])
+                        uriToUse = uriToUse.replace(
+                            onlyUrl, tmpurl.split("?")[0])
                     del headers["cookie"]
                 else:
                     uriToUse = uriToUse.replace(
@@ -617,7 +668,8 @@ def m3ugen(plugin, notify="yes"):
         if not Settings.get_boolean(lang):
             continue
         group = lang + ";" + genre
-        _play_url = PLAY_URL + "channel_id={0}".format(channel.get("channel_id"))
+        _play_url = PLAY_URL + \
+            "channel_id={0}".format(channel.get("channel_id"))
         catchup = ""
         if channel.get("isCatchupAvailable"):
             # get the epg for this channel
@@ -714,7 +766,8 @@ def epg_setup(plugin):
 # PVR Setup `route` to access from Settings
 @Script.register
 def pvrsetup(plugin):
-    executebuiltin("RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/m3ugen/)")
+    executebuiltin(
+        "RunPlugin(plugin://plugin.video.jiotv/resources/lib/main/m3ugen/)")
     IDdoADDON = "pvr.iptvsimple"
 
     def set_setting(id, value):

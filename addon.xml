@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.jiotv" name="JioTV" version="2.3.9" provider-name="tobalan">
+<addon id="plugin.video.jiotv" name="JioTV" version="2.4" provider-name="tobalan">
     <requires>
         <import addon="xbmc.python" version="3.0.0" />
         <import addon="script.module.codequick" version="1.0.2" />
@@ -25,6 +25,9 @@
         <email>kodi@botallen.com</email>
         <source>https://github.com/tobalan/plugin.video.jiotv</source>
         <news>
+            [- 2.4.0 -]
+            [added] 4th folder "Tree View (Genres -> Languages)", what it does? it will list genres, go in any then list language and in end list all channel with genre and language both match
+            
             [- 2.3.9 -]
             [added] Revamped settings.xml and added strings.po
 
