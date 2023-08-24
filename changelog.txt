@@ -1,3 +1,7 @@
+
+[- 2.4.0 -]
+[added] 4th folder "Tree View (Genres -> Languages)", what it does? it will list genres, go in any then list language and in end list all channel with genre and language both match
+
 [- 2.3.9 -]
 [added] Revamped settings.xml and added strings.po
 
