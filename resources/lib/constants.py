@@ -5,7 +5,7 @@ import xbmcaddon
 from codequick.script import Settings
 
 ADDON = xbmcaddon.Addon()
-ADDON_ID = 'plugin.video.jiotv'
+ADDON_ID = ADDON.getAddonInfo("id")
 
 # Urls
 IMG_PUBLIC = "https://jioimages.cdn.jio.com/imagespublic/"
