@@ -430,7 +430,7 @@ def play(
         headers["srno"] = str(uuid4()) if "srno" not in rjson else rjson["srno"]
         enableHost = Settings.get_boolean("enablehost")
         res = urlquick.post(
-            GET_CHANNEL_URL,
+            GET_CHANNEL_URL.replace("0", "1") if channel_id in [291, 471, 653, 1081] else GET_CHANNEL_URL,
             json=rjson,
             verify=False,
             headers=getChannelHeadersWithHost() if enableHost else getChannelHeaders(),
