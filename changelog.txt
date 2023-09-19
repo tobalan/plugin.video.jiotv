@@ -1,3 +1,7 @@
+[- 2.4.0 -]
+[added] Sony Network HD Channels
+[fixed] Cartoon Network HD+ Tamil, Zee Tamil HD, News 18 Kannada
+
 [- 2.3.9 -]
 [added] Revamped settings.xml and added strings.po
 
