@@ -301,7 +301,10 @@ def show_category(plugin, categoryOrLang, by):
                             "clearart": IMG_CATCHUP + each.get("logoUrl"),
                         },
                         "callback": play,
-                        "params": {"channel_id": each.get("channel_id")},
+                        "params": {
+                            "channel_id": each.get("channel_id"),
+                            "broadcasterid": each.get("broadcasterid"),
+                        },
                     }
                 )
                 if each.get("isCatchupAvailable"):
@@ -400,7 +403,14 @@ def show_epg(plugin, day, channel_id):
 @Resolver.register
 @isLoggedIn
 def play(
-    plugin, channel_id, showtime=None, srno=None, programId=None, begin=None, end=None
+    plugin,
+    channel_id,
+    broadcasterid,
+    showtime=None,
+    srno=None,
+    programId=None,
+    begin=None,
+    end=None,
 ):
     # import web_pdb; web_pdb.set_trace()
     # Script.notify("programId", programId)
