@@ -303,7 +303,7 @@ def show_category(plugin, categoryOrLang, by):
                         "callback": play,
                         "params": {
                             "channel_id": each.get("channel_id"),
-                            "broadcasterid": each.get("broadcasterid"),
+                            "broadcasterId": each.get("broadcasterId"),
                         },
                     }
                 )
@@ -405,7 +405,7 @@ def show_epg(plugin, day, channel_id):
 def play(
     plugin,
     channel_id,
-    broadcasterid,
+    broadcasterId,
     showtime=None,
     srno=None,
     programId=None,
@@ -441,7 +441,7 @@ def play(
         enableHost = Settings.get_boolean("enablehost")
         res = urlquick.post(
             GET_CHANNEL_URL=GET_CHANNEL_URL.replace(0, 1)
-            if broadcasterid in [3, 6]
+            if broadcasterId in [3, 6]
             else GET_CHANNEL_URL,
             json=rjson,
             verify=False,
